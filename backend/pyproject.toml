@@ -1,0 +1,28 @@
+[project]
+name = "tuneset-backend"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic-settings",
+    "redis",
+    "sqlalchemy",
+    "python-jose[cryptography]",
+    "bcrypt",
+    "email-validator",
+    "anthropic",
+    "openai",
+    "celery",
+    "langgraph",
+    "langgraph-checkpoint-redis",
+    "qqmusic-api-python",
+    "structlog",
+]
+
+[project.optional-dependencies]
+dev = ["ruff", "pytest", "pytest-asyncio"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"

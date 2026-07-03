@@ -1,0 +1,36 @@
+# TuneSet
+
+把 QQ音乐"我喜欢"/他人歌单的歌曲，用 AI 分类成多个新歌单，保证版本一致性。
+
+## 核心机制
+
+- **版本一致性**：用 `SonglistApi.add_songs(dirid, [(song_id, song_type), ...])` 按 song_id 精确添加，绕开 QQ音乐按歌名模糊匹配导致的版本错配。
+- **依赖库**：[L-1124/QQMusicApi](https://github.com/L-1124/QQMusicApi)（Python 异步），`pip install qqmusic-api-python`。命门接口详见 `docs/qqmusic-api-interfaces.md`。
+
+## 技术栈
+
+- 后端：Python + FastAPI（纯 API）
+- 前端：React SPA（dnd-kit 做分类拖拽）
+- 任务队列：Celery + Redis（task 内 `asyncio.run` 包异步调用，因 L-1124 库全异步）
+- AI 编排：**LangGraph**（多轮 HITL 工作流 + state + checkpoint）
+- AI 模型：`anthropic` + `openai` 双 SDK，LangGraph 节点内调用，开发者后台配置
+- DB：SQLite（用户账号 + 邀请码）
+- 认证：JWT（无状态）+ 邮箱密码
+- 部署：个人服务器
+
+## 关键约束
+
+- **用户系统**：邀请码注册 + 可配公开注册开关；邮箱+密码登录，JWT 鉴权
+- **QQ登录态**：前端持有，会话级，服务端不存储，过期重扫（方案⑤，独立于账号 JWT）
+- **AI 成本**：开发者承担，所有用户共用 → 必须强限流（用户级 + IP/频率/单次/轮次上限）
+- **分类模式 C（多轮 HITL）**：AI 提议 → 用户拖拽+对话反馈 → AI 带上下文重分类，**最多 5 轮** → 确认落库
+- **反馈形式**：拖拽（dnd-kit）+ 对话文本输入结合
+- **分类依据**：歌名+歌手+`get_labels` 标签，缺标签补 `get_lyric` 歌词
+- **双入口**：扫码登录取"我喜欢" / 粘贴分享链接取任意歌单
+- **存储分工**：SQLite 存用户账号/邀请码；Redis 存 Celery/LangGraph checkpoint/限流计数
+- **LangGraph checkpoint**：复用 Redis，按 `thread_id` 跨 HTTP 请求维持分类状态
+
+## 文档
+
+- 完整方案决策：`docs/plan.md`
+- QQMusicApi 接口确认：`docs/qqmusic-api-interfaces.md`
