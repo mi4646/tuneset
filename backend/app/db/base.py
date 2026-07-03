@@ -27,6 +27,6 @@ def get_db() -> Generator[Session, None, None]:
 
 def init_db() -> None:
     """建表。开发期用 create_all；生产迁移后续引入 alembic。"""
-    from app.models import InviteCode, User  # noqa: F401
+    from app.models import AuditLog, InviteCode, User  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
