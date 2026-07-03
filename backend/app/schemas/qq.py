@@ -1,0 +1,25 @@
+from pydantic import BaseModel
+
+
+class QrCodeResponse(BaseModel):
+    image_base64: str
+    identifier: str
+
+
+class CheckQrRequest(BaseModel):
+    identifier: str
+
+
+class CheckQrResponse(BaseModel):
+    done: bool
+    event: str | None = None
+    credential: dict | None = None
+
+
+class FavSongRequest(BaseModel):
+    euin: str
+    credential: dict
+
+
+class SharedSonglistRequest(BaseModel):
+    songlist_id: int
