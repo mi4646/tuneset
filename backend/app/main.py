@@ -1,13 +1,24 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.api import auth, classify, health, qq, songlist
 from app.config import settings
+from app.db.base import ensure_superadmin, init_db
 from app.ratelimit.middleware import IPRateLimitMiddleware
 from qqmusic_api import ApiException
 
-app = FastAPI(title="TuneSet")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    ensure_superadmin()
+    yield
+
+
+app = FastAPI(title="TuneSet", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

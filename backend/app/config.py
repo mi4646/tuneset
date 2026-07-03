@@ -23,6 +23,10 @@ class Settings(BaseSettings):
     public_registration_enabled: bool = False
     invite_code_required: bool = True
 
+    # 超管（启动时若不存在则创建，已存在则跳过；两者都配才生效）
+    superadmin_email: str = ""
+    superadmin_password: str = ""
+
     # 限流
     rate_limit_user_daily: int = 30
     rate_limit_ip_hourly: int = 20
