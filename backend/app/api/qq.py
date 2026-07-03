@@ -1,16 +1,13 @@
 import base64
 import pickle
 
-import redis
 from fastapi import APIRouter, HTTPException
 
-from app.config import settings
 from app.qqmusic.client import QQMusicClient
+from app.redis_client import redis_client as _redis
 from app.schemas.qq import CheckQrRequest, CheckQrResponse, QrCodeResponse
 
 router = APIRouter()
-
-_redis = redis.from_url(settings.redis_url)
 _QR_KEY = "qq:qr:{identifier}"
 _QR_TTL = 300  # 二维码 5 分钟有效
 

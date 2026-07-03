@@ -4,6 +4,7 @@ from fastapi.responses import JSONResponse
 
 from app.api import auth, health, qq, songlist
 from app.config import settings
+from app.ratelimit.middleware import IPRateLimitMiddleware
 from qqmusic_api import ApiException
 
 app = FastAPI(title="TuneSet")
@@ -14,6 +15,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(IPRateLimitMiddleware)
 
 app.include_router(health.router, prefix="/api")
 app.include_router(auth.router, prefix="/api/auth")
