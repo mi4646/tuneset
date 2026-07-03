@@ -30,4 +30,5 @@ def build_graph():
     builder.add_conditional_edges("await_feedback", route_after_feedback)
     builder.add_edge("finalize", END)
     checkpointer = RedisSaver(redis_url=settings.redis_url)
+    checkpointer.setup()  # 创建 RediSearch 索引（幂等）
     return builder.compile(checkpointer=checkpointer)

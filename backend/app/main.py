@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import auth, health, qq, songlist
+from app.api import auth, classify, health, qq, songlist
 from app.config import settings
 from app.ratelimit.middleware import IPRateLimitMiddleware
 from qqmusic_api import ApiException
@@ -21,6 +21,7 @@ app.include_router(health.router, prefix="/api")
 app.include_router(auth.router, prefix="/api/auth")
 app.include_router(qq.router, prefix="/api/qq")
 app.include_router(songlist.router, prefix="/api/songlist")
+app.include_router(classify.router, prefix="/api/classify")
 
 
 @app.exception_handler(ApiException)
