@@ -15,3 +15,6 @@ frontend/dist/
 # IDE
 .vscode/
 .idea/
+
+# Claude Code 个人配置（不提交）
+.claude
