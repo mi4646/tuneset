@@ -17,7 +17,6 @@ class CheckQrResponse(BaseModel):
 
 
 class FavSongRequest(BaseModel):
-    euin: str
     credential: dict
 
 

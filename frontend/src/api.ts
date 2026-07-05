@@ -107,8 +107,8 @@ export const qqApi = {
 export const songlistApi = {
   shared: (songlist_id: number) =>
     api.post<SharedSonglistResponse>("/songlist/shared", { songlist_id }),
-  favorite: (euin: string, credential: Record<string, unknown>) =>
-    api.post<SharedSonglistResponse>("/songlist/favorite", { euin, credential }),
+  favorite: (credential: Record<string, unknown>) =>
+    api.post<SharedSonglistResponse>("/songlist/favorite", { credential }),
 };
 
 export const classifyApi = {

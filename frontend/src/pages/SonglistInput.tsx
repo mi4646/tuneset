@@ -4,6 +4,17 @@ import { songlistApi, classifyApi, getCredential } from "../api";
 import type { SongItem } from "../types";
 import Spinner from "../components/Spinner";
 
+const parseSongItems = (songs: Record<string, unknown>[]): SongItem[] =>
+  songs.map((s) => ({
+    song_id: (s.song_id as number) || (s.id as number),
+    song_type: (s.song_type as number) || (s.type as number) || 0,
+    name: (s.name as string) || (s.song_name as string) || "",
+    singer: Array.isArray(s.singer)
+      ? (s.singer as { name?: string }[]).map((x) => x.name).filter(Boolean).join(" / ")
+      : (s.singer as string) || "",
+    labels: (s.labels as string[]) || [],
+  }));
+
 export default function SonglistInput() {
   const [link, setLink] = useState("");
   const [songs, setSongs] = useState<SongItem[]>([]);
@@ -18,6 +29,26 @@ export default function SonglistInput() {
     return m ? Number(m[1]) : null;
   };
 
+  const loadFav = async () => {
+    setLoading(true);
+    setErr("");
+    try {
+      const cred = getCredential();
+      if (!cred) throw new Error("未登录 QQ 音乐");
+      const r = await songlistApi.favorite(cred);
+      setSongs(parseSongItems(r.data?.songs || []));
+      setLoaded(true);
+    } catch (e: unknown) {
+      const msg =
+        (e as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
+        (e as { message?: string }).message ||
+        "加载失败";
+      setErr(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const load = async () => {
     setLoading(true);
     setErr("");
@@ -25,16 +56,7 @@ export default function SonglistInput() {
       const id = parseSonglistId(link);
       if (!id) throw new Error("无法解析歌单 ID");
       const r = await songlistApi.shared(id);
-      const list: SongItem[] = (r.data?.songs || []).map(
-        (s: Record<string, unknown>) => ({
-          song_id: (s.song_id as number) || (s.id as number),
-          song_type: (s.song_type as number) || 0,
-          name: (s.name as string) || (s.song_name as string) || "",
-          singer: (s.singer as string) || "",
-          labels: (s.labels as string[]) || [],
-        })
-      );
-      setSongs(list);
+      setSongs(parseSongItems(r.data?.songs || []));
       setLoaded(true);
     } catch (e: unknown) {
       const msg =
@@ -85,7 +107,9 @@ export default function SonglistInput() {
         <div className="entry">
           <h2>扫码取"我喜欢"</h2>
           {hasQq ? (
-            <p className="hint">已登录 QQ 音乐（加载"我喜欢"待接入）</p>
+            <button className="btn" onClick={loadFav} disabled={loading}>
+              加载我的喜欢
+            </button>
           ) : (
             <Link to="/qr" className="btn btn-ghost">
               去扫码登录
