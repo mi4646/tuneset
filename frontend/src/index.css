@@ -247,3 +247,88 @@ code {
   padding: var(--space-5);
   text-align: center;
 }
+
+/* auth 页 */
+.auth-page {
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-5);
+}
+
+.card {
+  width: 100%;
+  max-width: 400px;
+  padding: var(--space-5);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+}
+
+.card h1 {
+  text-align: center;
+  margin-bottom: var(--space-4);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--text-h);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.error-banner {
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: var(--danger-bg);
+  color: var(--danger);
+  font-size: 14px;
+}
+
+.form-foot {
+  text-align: center;
+  margin-top: var(--space-3);
+  font-size: 14px;
+}
+
+/* QR 登录 */
+.qr-card {
+  text-align: center;
+}
+
+.qr-wrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--space-3);
+}
+
+.qr-placeholder {
+  width: 200px;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--code-bg);
+  border-radius: var(--radius);
+  color: var(--text);
+}
+
+.qr-status {
+  margin-bottom: var(--space-3);
+}
