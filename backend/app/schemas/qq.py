@@ -22,3 +22,9 @@ class FavSongRequest(BaseModel):
 
 class SharedSonglistRequest(BaseModel):
     songlist_id: int
+
+
+class SubscribeResponse(BaseModel):
+    stream_id: str
+    songs: list
+    total: int

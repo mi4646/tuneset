@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     superadmin_email: str = ""
     superadmin_password: str = ""
 
+    # 我喜欢推送
+    fav_push_interval: int = 300  # 推送/缓存刷新间隔（秒）
+
     # 限流
     rate_limit_user_daily: int = 30
     rate_limit_ip_hourly: int = 20

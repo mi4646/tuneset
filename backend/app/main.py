@@ -4,15 +4,17 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import auth, classify, health, qq, songlist
+from app.api import auth, classify, health, qq, songlist, stream
 from app.config import settings
 from app.db.base import ensure_superadmin, init_db
+from app.logging import setup_logging
 from app.ratelimit.middleware import IPRateLimitMiddleware
 from qqmusic_api import ApiException
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    setup_logging()
     init_db()
     ensure_superadmin()
     yield
@@ -33,6 +35,7 @@ app.include_router(auth.router, prefix="/api/auth")
 app.include_router(qq.router, prefix="/api/qq")
 app.include_router(songlist.router, prefix="/api/songlist")
 app.include_router(classify.router, prefix="/api/classify")
+app.include_router(stream.router, prefix="/api")
 
 
 @app.exception_handler(ApiException)

@@ -21,7 +21,7 @@
 ## 关键约束
 
 - **用户系统**：邀请码注册 + 可配公开注册开关；邮箱+密码登录，JWT 鉴权
-- **QQ登录态**：前端持有，会话级，服务端不存储，过期重扫（方案⑤，独立于账号 JWT）
+- **QQ登录态**：前端持有为主，后端 SSE 推送时按 euin 临时缓存 credential（Redis，TTL=推送间隔×2，连接断开清理），过期重扫（方案⑤，独立于账号 JWT）
 - **AI 成本**：开发者承担，所有用户共用 → 必须强限流（用户级 + IP/频率/单次/轮次上限）
 - **分类模式 C（多轮 HITL）**：AI 提议 → 用户拖拽+对话反馈 → AI 带上下文重分类，**最多 5 轮** → 确认落库
 - **反馈形式**：拖拽（dnd-kit）+ 对话文本输入结合
@@ -29,6 +29,46 @@
 - **双入口**：扫码登录取"我喜欢" / 粘贴分享链接取任意歌单
 - **存储分工**：SQLite 存用户账号/邀请码；Redis 存 Celery/LangGraph checkpoint/限流计数
 - **LangGraph checkpoint**：复用 Redis，按 `thread_id` 跨 HTTP 请求维持分类状态
+
+## 日志规范
+
+后端使用 `structlog`（JSON 结构化输出），前端不强制。
+
+### 级别
+
+- `INFO`：关键业务节点（请求到达、状态变更、完成）
+- `WARNING`：可恢复异常（限流、过期、降级）
+- `ERROR`：不可恢复错误（异常、失败）
+- `DEBUG`：详细调试（默认不输出）
+
+### 必填字段
+
+- `event`：事件名（snake_case，如 `qq_login_done`）
+- `level`：日志级别（structlog 自动加）
+- `timestamp`：ISO8601 UTC（structlog 自动加）
+
+### 业务字段（按场景）
+
+- `user_id`：账号 ID
+- `thread_id`：分类任务线程
+- `euin_masked`：QQ 加密 UIN（脱敏）
+- `duration_ms`：耗时
+- `error`：错误信息
+
+### 脱敏规则
+
+- `credential` / `musickey` / `refresh_token` / `access_token`：**禁止打印**
+- `euin`：用 `mask()` 保留前 4 + 后 4，中间 `***`
+- 业务 ID（song_id / thread_id 等）：不脱敏
+
+### 使用
+
+```python
+from app.logging import get_logger, mask
+
+log = get_logger(__name__)
+log.info("event_name", field=value, euin_masked=mask(euin))
+```
 
 ## 文档
 
