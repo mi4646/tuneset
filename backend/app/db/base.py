@@ -45,20 +45,24 @@ def init_db() -> None:
 
 
 def ensure_superadmin() -> None:
-    """幂等初始化超管用户。.env 未配 SUPERADMIN_EMAIL/PASSWORD 则跳过。"""
+    """幂等初始化超管用户。.env 未配 SUPERADMIN_EMAIL/PASSWORD 则跳过。
+    已存在但密码与 .env 不符时更新密码（支持改密后重启生效）。"""
     if not settings.superadmin_email or not settings.superadmin_password:
         return
-    from app.auth.security import hash_password
+    from app.auth.security import hash_password, verify_password
     from app.models import User
 
     with SessionLocal() as db:
         existing = db.scalar(select(User).where(User.email == settings.superadmin_email))
-        if existing is not None:
+        if existing is None:
+            user = User(
+                email=settings.superadmin_email,
+                password_hash=hash_password(settings.superadmin_password),
+                is_superuser=True,
+            )
+            db.add(user)
+            db.commit()
             return
-        user = User(
-            email=settings.superadmin_email,
-            password_hash=hash_password(settings.superadmin_password),
-            is_superuser=True,
-        )
-        db.add(user)
-        db.commit()
+        if not verify_password(settings.superadmin_password, existing.password_hash):
+            existing.password_hash = hash_password(settings.superadmin_password)
+            db.commit()
