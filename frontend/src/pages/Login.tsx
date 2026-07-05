@@ -1,16 +1,15 @@
 import { useState } from "react";
-import { useNavigate, Link, Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { authApi } from "../api";
 import { useAuth } from "../hooks/useAuth";
 import Spinner from "../components/Spinner";
 
 export default function Login() {
-  const { user, loading } = useAuth();
+  const { user, loading, refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const nav = useNavigate();
 
   if (loading) return <Spinner label="加载中…" />;
   if (user) return <Navigate to="/songlist" replace />;
@@ -29,7 +28,7 @@ export default function Login() {
     setSubmitting(true);
     try {
       await authApi.login({ email, password });
-      nav("/songlist");
+      await refreshUser();
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } }).response?.data
         ?.detail;

@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { authApi, clearToken, isLoggedIn } from "../api";
 import { AuthCtx, type User } from "../hooks/useAuth";
 
@@ -6,17 +6,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const refreshUser = useCallback(async () => {
     if (!isLoggedIn()) {
+      setUser(null);
       setLoading(false);
       return;
     }
-    authApi
-      .me()
-      .then((r) => setUser(r.data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    setLoading(true);
+    try {
+      const r = await authApi.me();
+      setUser(r.data);
+    } catch {
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
 
   const logout = () => {
     clearToken();
@@ -24,5 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     location.assign("/login");
   };
 
-  return <AuthCtx.Provider value={{ user, loading, logout }}>{children}</AuthCtx.Provider>;
+  return (
+    <AuthCtx.Provider value={{ user, loading, logout, refreshUser }}>
+      {children}
+    </AuthCtx.Provider>
+  );
 }

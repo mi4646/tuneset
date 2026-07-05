@@ -7,12 +7,14 @@ export interface AuthCtxValue {
   user: User | null;
   loading: boolean;
   logout: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthCtx = createContext<AuthCtxValue>({
   user: null,
   loading: true,
   logout: () => {},
+  refreshUser: async () => {},
 });
 
 export function useAuth() {
