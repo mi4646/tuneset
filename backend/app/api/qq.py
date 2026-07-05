@@ -49,5 +49,5 @@ async def check_qrcode(body: CheckQrRequest) -> CheckQrResponse:
         resp.credential = cred_dict
         _redis.delete(key)  # 登录完成，QR 不再需要
     else:
-        log.info("qq_check_progress", event=event_name, done=result.done)
+        log.info("qq_check_progress", qq_event=event_name, done=result.done)
     return resp

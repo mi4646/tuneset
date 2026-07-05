@@ -46,8 +46,8 @@ def _json_patcher(record: dict) -> None:
         "event": record["message"],
     }
     for k, v in record["extra"].items():
-        if k == "_json":
-            continue
+        if k == "_json" or k in subset:
+            continue  # 不覆盖日志元字段（timestamp/level/event）
         subset[k] = v
     record["extra"]["_json"] = json.dumps(subset, ensure_ascii=False, default=str)
 
@@ -86,29 +86,32 @@ def setup_logging() -> None:
 
 
 class _StructlogLikeLogger:
-    """兼容 structlog 调用风格的 loguru 包装：log.info(event, field=value)."""
+    """兼容 structlog 调用风格的 loguru 包装：log.info(event, field=value).
+
+    第一个参数 positional-only（_event），避免业务字段名 event 冲突.
+    """
 
     def __init__(self, name: str | None = None):
         self._name = name
 
-    def _log(self, level: str, event: str, **kwargs: Any) -> None:
+    def _log(self, level: str, _event: str, /, **kwargs: Any) -> None:
         extra: dict[str, Any] = {}
         if self._name:
             extra["logger_name"] = self._name
         extra.update(kwargs)
-        logger.bind(**extra).log(level, event)
+        logger.bind(**extra).log(level, _event)
 
-    def info(self, event: str, **kwargs: Any) -> None:
-        self._log("INFO", event, **kwargs)
+    def info(self, _event: str, /, **kwargs: Any) -> None:
+        self._log("INFO", _event, **kwargs)
 
-    def warning(self, event: str, **kwargs: Any) -> None:
-        self._log("WARNING", event, **kwargs)
+    def warning(self, _event: str, /, **kwargs: Any) -> None:
+        self._log("WARNING", _event, **kwargs)
 
-    def error(self, event: str, **kwargs: Any) -> None:
-        self._log("ERROR", event, **kwargs)
+    def error(self, _event: str, /, **kwargs: Any) -> None:
+        self._log("ERROR", _event, **kwargs)
 
-    def debug(self, event: str, **kwargs: Any) -> None:
-        self._log("DEBUG", event, **kwargs)
+    def debug(self, _event: str, /, **kwargs: Any) -> None:
+        self._log("DEBUG", _event, **kwargs)
 
 
 def get_logger(name: str | None = None) -> _StructlogLikeLogger:
