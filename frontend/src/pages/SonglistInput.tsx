@@ -51,6 +51,7 @@ export default function SonglistInput() {
     setLoading(true);
     setErr("");
     try {
+      sessionStorage.setItem("classify_songs", JSON.stringify(songs));
       const r = await classifyApi.start(songs);
       nav(`/classify/${r.data.thread_id}`);
     } catch (e: unknown) {

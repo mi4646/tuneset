@@ -9,6 +9,12 @@ export interface ProposalItem {
   reason: string;
 }
 
+export interface DragFeedback {
+  song_id: number;
+  from_category: string;
+  to_category: string;
+}
+
 export interface SongItem {
   song_id: number;
   song_type: number;
