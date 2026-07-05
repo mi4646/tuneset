@@ -12,20 +12,69 @@ export function setToken(access: string, refresh: string) {
   localStorage.setItem("token", access);
   localStorage.setItem("refresh", refresh);
 }
+
 export function clearToken() {
   localStorage.removeItem("token");
   localStorage.removeItem("refresh");
 }
+
 export function isLoggedIn() {
   return !!localStorage.getItem("token");
 }
+
 export function getCredential(): Record<string, unknown> | null {
   const raw = sessionStorage.getItem("qq_credential");
   return raw ? JSON.parse(raw) : null;
 }
+
 export function setCredential(cred: Record<string, unknown>) {
   sessionStorage.setItem("qq_credential", JSON.stringify(cred));
 }
+
+let refreshing: Promise<string> | null = null;
+
+async function doRefresh(): Promise<string> {
+  const rt = localStorage.getItem("refresh");
+  if (!rt) throw new Error("no refresh token");
+  const r = await axios.post("/api/auth/refresh", {
+    refresh_token: rt,
+  });
+  const data = r.data as { access_token: string; refresh_token: string };
+  setToken(data.access_token, data.refresh_token);
+  return data.access_token;
+}
+
+api.interceptors.response.use(
+  (r) => r,
+  async (error) => {
+    const original = error.config as {
+      _retry?: boolean;
+      url?: string;
+      headers?: Record<string, string>;
+    };
+    if (
+      error.response?.status === 401 &&
+      !original._retry &&
+      original.url !== "/auth/refresh"
+    ) {
+      original._retry = true;
+      try {
+        if (!refreshing) {
+          refreshing = doRefresh().finally(() => {
+            refreshing = null;
+          });
+        }
+        const token = await refreshing;
+        original.headers = { ...original.headers, Authorization: `Bearer ${token}` };
+        return api(original);
+      } catch {
+        clearToken();
+        if (location.pathname !== "/login") location.assign("/login");
+      }
+    }
+    return Promise.reject(error);
+  }
+);
 
 export const authApi = {
   register: (data: { email: string; password: string; invite_code?: string }) =>
@@ -35,7 +84,6 @@ export const authApi = {
       setToken(r.data.access_token, r.data.refresh_token);
       return r;
     }),
-  refresh: () => api.post("/auth/refresh", { refresh_token: localStorage.getItem("refresh") }),
   me: () => api.get("/auth/me"),
 };
 
@@ -53,9 +101,13 @@ export const songlistApi = {
 export const classifyApi = {
   start: (songs: unknown[]) => api.post("/classify/start", { songs }),
   state: (thread_id: string) => api.get(`/classify/${thread_id}`),
-  feedback: (thread_id: string, data: { feedback_text?: string; feedback_drag?: unknown[] }) =>
-    api.post(`/classify/${thread_id}/feedback`, data),
-  confirm: (thread_id: string, data: { credential: Record<string, unknown>; dirname_template?: string }) =>
-    api.post(`/classify/${thread_id}/confirm`, data),
+  feedback: (
+    thread_id: string,
+    data: { feedback_text?: string; feedback_drag?: unknown[] }
+  ) => api.post(`/classify/${thread_id}/feedback`, data),
+  confirm: (
+    thread_id: string,
+    data: { credential: Record<string, unknown>; dirname_template?: string }
+  ) => api.post(`/classify/${thread_id}/confirm`, data),
   cancel: (thread_id: string) => api.post(`/classify/${thread_id}/cancel`),
 };

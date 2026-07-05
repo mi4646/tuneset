@@ -4,23 +4,30 @@ import Register from "./pages/Register";
 import QrLogin from "./pages/QrLogin";
 import SonglistInput from "./pages/SonglistInput";
 import ClassifyWorkbench from "./pages/ClassifyWorkbench";
-import { isLoggedIn } from "./api";
-
-function Private({ children }: { children: React.ReactElement }) {
-  return isLoggedIn() ? children : <Navigate to="/login" />;
-}
+import { AuthProvider } from "./components/AuthProvider";
+import ErrorBoundary from "./components/ErrorBoundary";
+import AppLayout from "./components/AppLayout";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/qr" element={<QrLogin />} />
-        <Route path="/songlist" element={<Private><SonglistInput /></Private>} />
-        <Route path="/classify/:threadId" element={<Private><ClassifyWorkbench /></Private>} />
-        <Route path="*" element={<Navigate to="/songlist" />} />
-      </Routes>
+      <ErrorBoundary>
+        <AuthProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/qr" element={<QrLogin />} />
+            <Route element={<ProtectedRoute />}>
+              <Route element={<AppLayout />}>
+                <Route path="/songlist" element={<SonglistInput />} />
+                <Route path="/classify/:threadId" element={<ClassifyWorkbench />} />
+              </Route>
+            </Route>
+            <Route path="*" element={<Navigate to="/songlist" replace />} />
+          </Routes>
+        </AuthProvider>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }
