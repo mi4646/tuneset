@@ -1,14 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { classifyApi, getCredential } from "../api";
-import type { DragFeedback, ProposalItem } from "../types";
+import type { ConfirmResult, DragFeedback, ProposalItem } from "../types";
 
 const MAX_ITERATIONS = 5;
-
-interface ConfirmResult {
-  category: string;
-  dirid: number;
-  added: boolean;
-}
 
 export function useClassify(threadId: string) {
   const [items, setItems] = useState<ProposalItem[]>([]);
@@ -26,7 +20,7 @@ export function useClassify(threadId: string) {
     setErr("");
     try {
       const r = await classifyApi.state(threadId);
-      setItems((r.data.proposal as ProposalItem[]) || []);
+      setItems(r.data.proposal || []);
       setIteration(r.data.iteration || 0);
       setStatus(r.data.status || "");
       setPlan(r.data.plan || null);
@@ -51,7 +45,7 @@ export function useClassify(threadId: string) {
         feedback_text: text,
         feedback_drag: dragLog,
       });
-      setItems((r.data.proposal as ProposalItem[]) || []);
+      setItems(r.data.proposal || []);
       setIteration(r.data.iteration || 0);
       setStatus(r.data.status || "");
       setDragLog([]);
@@ -77,7 +71,7 @@ export function useClassify(threadId: string) {
     setErr("");
     try {
       const r = await classifyApi.confirm(threadId, { credential: cred });
-      setResults(r.data.results as ConfirmResult[]);
+      setResults(r.data.results);
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } }).response?.data
         ?.detail;

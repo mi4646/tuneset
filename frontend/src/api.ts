@@ -1,4 +1,16 @@
 import axios from "axios";
+import type {
+  CheckQrResponse,
+  ConfirmResponse,
+  DragFeedback,
+  QrCodeResponse,
+  SharedSonglistResponse,
+  SongItem,
+  StartResponse,
+  StateResponse,
+  TokenPair,
+  User,
+} from "./types";
 
 const api = axios.create({ baseURL: "/api" });
 
@@ -36,12 +48,11 @@ let refreshing: Promise<string> | null = null;
 async function doRefresh(): Promise<string> {
   const rt = localStorage.getItem("refresh");
   if (!rt) throw new Error("no refresh token");
-  const r = await axios.post("/api/auth/refresh", {
+  const r = await axios.post<TokenPair>("/api/auth/refresh", {
     refresh_token: rt,
   });
-  const data = r.data as { access_token: string; refresh_token: string };
-  setToken(data.access_token, data.refresh_token);
-  return data.access_token;
+  setToken(r.data.access_token, r.data.refresh_token);
+  return r.data.access_token;
 }
 
 api.interceptors.response.use(
@@ -80,34 +91,40 @@ export const authApi = {
   register: (data: { email: string; password: string; invite_code?: string }) =>
     api.post("/auth/register", data),
   login: (data: { email: string; password: string }) =>
-    api.post("/auth/login", data).then((r) => {
+    api.post<TokenPair>("/auth/login", data).then((r) => {
       setToken(r.data.access_token, r.data.refresh_token);
       return r;
     }),
-  me: () => api.get("/auth/me"),
+  me: () => api.get<User>("/auth/me"),
 };
 
 export const qqApi = {
-  qrcode: () => api.post("/qq/qrcode"),
-  check: (identifier: string) => api.post("/qq/check", { identifier }),
+  qrcode: () => api.post<QrCodeResponse>("/qq/qrcode"),
+  check: (identifier: string) =>
+    api.post<CheckQrResponse>("/qq/check", { identifier }),
 };
 
 export const songlistApi = {
-  shared: (songlist_id: number) => api.post("/songlist/shared", { songlist_id }),
+  shared: (songlist_id: number) =>
+    api.post<SharedSonglistResponse>("/songlist/shared", { songlist_id }),
   favorite: (euin: string, credential: Record<string, unknown>) =>
-    api.post("/songlist/favorite", { euin, credential }),
+    api.post<SharedSonglistResponse>("/songlist/favorite", { euin, credential }),
 };
 
 export const classifyApi = {
-  start: (songs: unknown[]) => api.post("/classify/start", { songs }),
-  state: (thread_id: string) => api.get(`/classify/${thread_id}`),
+  start: (songs: SongItem[]) =>
+    api.post<StartResponse>("/classify/start", { songs }),
+  state: (thread_id: string) => api.get<StateResponse>(`/classify/${thread_id}`),
   feedback: (
     thread_id: string,
-    data: { feedback_text?: string; feedback_drag?: unknown[] }
-  ) => api.post(`/classify/${thread_id}/feedback`, data),
+    data: { feedback_text?: string; feedback_drag?: DragFeedback[] }
+  ) => api.post<StartResponse>(`/classify/${thread_id}/feedback`, data),
   confirm: (
     thread_id: string,
     data: { credential: Record<string, unknown>; dirname_template?: string }
-  ) => api.post(`/classify/${thread_id}/confirm`, data),
-  cancel: (thread_id: string) => api.post(`/classify/${thread_id}/cancel`),
+  ) => api.post<ConfirmResponse>(`/classify/${thread_id}/confirm`, data),
+  cancel: (thread_id: string) =>
+    api.post<{ cancelled: boolean; thread_id: string }>(
+      `/classify/${thread_id}/cancel`
+    ),
 };

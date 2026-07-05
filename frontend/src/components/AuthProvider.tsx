@@ -13,7 +13,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     authApi
       .me()
-      .then((r) => setUser(r.data as User))
+      .then((r) => setUser(r.data))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);

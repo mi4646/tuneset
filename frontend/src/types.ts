@@ -23,3 +23,52 @@ export interface SongItem {
   labels?: string[];
   lyric?: string;
 }
+
+export interface User {
+  email: string;
+}
+
+export interface TokenPair {
+  access_token: string;
+  refresh_token: string;
+}
+
+export interface QrCodeResponse {
+  image_base64: string;
+  identifier: string;
+}
+
+export interface CheckQrResponse {
+  done: boolean;
+  event?: string;
+  credential?: Record<string, unknown>;
+}
+
+export interface SharedSonglistResponse {
+  songs: Record<string, unknown>[];
+}
+
+export interface StartResponse {
+  thread_id: string;
+  status: string;
+  proposal: ProposalItem[];
+  iteration: number;
+}
+
+export interface StateResponse {
+  thread_id: string;
+  status: string;
+  proposal?: ProposalItem[];
+  iteration?: number;
+  plan?: Record<string, unknown>;
+}
+
+export interface ConfirmResult {
+  category: string;
+  dirid: number;
+  added: boolean;
+}
+
+export interface ConfirmResponse {
+  results: ConfirmResult[];
+}

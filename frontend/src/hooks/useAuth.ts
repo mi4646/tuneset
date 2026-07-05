@@ -1,8 +1,7 @@
 import { createContext, useContext } from "react";
+import type { User } from "../types";
 
-export interface User {
-  email: string;
-}
+export type { User };
 
 export interface AuthCtxValue {
   user: User | null;
