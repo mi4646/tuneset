@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { qqApi, setCredential } from "../api";
+import { useAuth } from "../hooks/useAuth";
+import Spinner from "../components/Spinner";
 
 type QrStatus = "loading" | "waiting" | "scanned" | "success" | "expired" | "error";
 
@@ -14,12 +16,14 @@ const STATUS_TEXT: Record<QrStatus, string> = {
 };
 
 export default function QrLogin() {
+  const { user, loading } = useAuth();
   const [img, setImg] = useState("");
   const [status, setStatus] = useState<QrStatus>("loading");
   const [qrKey, setQrKey] = useState(0);
   const nav = useNavigate();
 
   useEffect(() => {
+    if (!user) return;
     let stopped = false;
     let timer: ReturnType<typeof setInterval>;
     (async () => {
@@ -62,7 +66,23 @@ export default function QrLogin() {
       stopped = true;
       if (timer) clearInterval(timer);
     };
-  }, [qrKey, nav]);
+  }, [qrKey, nav, user]);
+
+  if (loading) return <Spinner label="加载中…" />;
+
+  if (!user) {
+    return (
+      <div className="auth-page">
+        <div className="card qr-card">
+          <h1>QQ 音乐扫码登录</h1>
+          <p className="hint">请先账号登录后再扫码绑定 QQ 音乐。</p>
+          <Link to="/login" className="btn">
+            去登录
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   const showImg =
     img && status !== "expired" && status !== "error" && status !== "loading";
