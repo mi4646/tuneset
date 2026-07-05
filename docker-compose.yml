@@ -18,6 +18,7 @@ services:
       - redis
     volumes:
       - ./backend/data:/app/data
+      - ./logs:/app/logs
     restart: unless-stopped
 
   worker:
@@ -28,6 +29,8 @@ services:
       - ./backend/.env
     depends_on:
       - redis
+    volumes:
+      - ./logs:/app/logs
     restart: unless-stopped
 
   beat:
@@ -38,6 +41,8 @@ services:
       - ./backend/.env
     depends_on:
       - redis
+    volumes:
+      - ./logs:/app/logs
     restart: unless-stopped
 
   frontend:

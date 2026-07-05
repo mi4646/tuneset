@@ -32,7 +32,7 @@
 
 ## 日志规范
 
-后端使用 `structlog`（JSON 结构化输出），前端不强制。
+后端使用 `loguru`（JSON 结构化输出 + 文件持久化），前端不强制。
 
 ### 级别
 
@@ -44,8 +44,8 @@
 ### 必填字段
 
 - `event`：事件名（snake_case，如 `qq_login_done`）
-- `level`：日志级别（structlog 自动加）
-- `timestamp`：ISO8601 UTC（structlog 自动加）
+- `level`：日志级别（loguru 自动加）
+- `timestamp`：ISO8601 UTC（loguru 自动加）
 
 ### 业务字段（按场景）
 
@@ -69,6 +69,13 @@ from app.logging import get_logger, mask
 log = get_logger(__name__)
 log.info("event_name", field=value, euin_masked=mask(euin))
 ```
+
+### 持久化
+
+- 双输出：stdout（docker logs）+ 文件（`/app/logs/app.log`，docker volume 挂载宿主机 `./logs/`）
+- Rotation：`log_max_bytes`（默认 10MB）超出切分，`log_backup_count`（默认 5）保留旧文件，zip 压缩
+- 多进程安全：loguru `enqueue=True`（celery worker prefork 多进程同写不冲突）
+- 配置：`.env` 的 `LOG_FILE` / `LOG_MAX_BYTES` / `LOG_BACKUP_COUNT`
 
 ## 文档
 

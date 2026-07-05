@@ -1,10 +1,16 @@
-"""结构化日志配置. 基于 structlog，JSON 输出.
+"""结构化日志配置. 基于 loguru，JSON 输出 + 文件持久化 + rotation.
 
+调用方式兼容 structlog 风格：log.info("event_name", field=value)
 规范见 CLAUDE.md "日志规范" 章节.
 """
+import json
 import logging
+import sys
+from typing import Any
 
-import structlog
+from loguru import logger
+
+from app.config import settings
 
 
 def mask(value: str | None, keep: int = 4) -> str:
@@ -14,24 +20,97 @@ def mask(value: str | None, keep: int = 4) -> str:
     return f"{value[:keep]}***{value[-keep:]}"
 
 
+class InterceptHandler(logging.Handler):
+    """拦截标准 logging（uvicorn 等）转发到 loguru，统一输出."""
+
+    def emit(self, record: logging.LogRecord) -> None:
+        try:
+            level = logger.level(record.levelname).name
+        except ValueError:
+            level = record.levelno
+        frame, depth = logging.currentframe(), 2
+        while frame and frame.f_code.co_filename == logging.__file__:
+            frame = frame.f_back
+            depth += 1
+        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+
+
+def _json_patcher(record: dict) -> None:
+    """patcher：把 record 序列化为扁平 JSON 存入 extra[_json].
+
+    避免 format callable 返回 JSON 时 {} 被 loguru 当占位符.
+    """
+    subset: dict[str, Any] = {
+        "timestamp": record["time"].isoformat() + "Z",
+        "level": record["level"].name,
+        "event": record["message"],
+    }
+    for k, v in record["extra"].items():
+        if k == "_json":
+            continue
+        subset[k] = v
+    record["extra"]["_json"] = json.dumps(subset, ensure_ascii=False, default=str)
+
+
 def setup_logging() -> None:
-    """初始化 structlog. 在 FastAPI lifespan 启动时调用一次."""
-    structlog.configure(
-        processors=[
-            structlog.contextvars.merge_contextvars,
-            structlog.processors.add_log_level,
-            structlog.processors.TimeStamper(fmt="iso", utc=True),
-            structlog.processors.StackInfoRenderer(),
-            structlog.processors.format_exc_info,
-            structlog.processors.JSONRenderer(),
-        ],
-        wrapper_class=structlog.make_filtering_bound_logger(logging.INFO),
-        context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(),
-        cache_logger_on_first_use=True,
+    """初始化 loguru. 在 FastAPI lifespan 启动时调用一次.
+
+    双输出：stdout（docker logs）+ 文件（持久化，rotation，多进程安全 via enqueue）.
+    标准 logging（uvicorn 等）通过 InterceptHandler 转发到 loguru.
+    """
+    logger.remove()
+    logger.configure(patcher=_json_patcher)
+    # intercept 标准 logging 到 loguru
+    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+    for name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+        lg = logging.getLogger(name)
+        lg.handlers = [InterceptHandler()]
+        lg.propagate = False
+    # stdout（docker logs 仍可用）
+    logger.add(
+        sys.stdout,
+        format="{extra[_json]}",
+        level="INFO",
+    )
+    # 文件（持久化 + rotation + 多进程安全）
+    logger.add(
+        settings.log_file,
+        format="{extra[_json]}",
+        rotation=settings.log_max_bytes,
+        retention=settings.log_backup_count,
+        compression="zip",
+        level="INFO",
+        enqueue=True,  # 多进程安全（celery worker prefork）
+        encoding="utf-8",
     )
 
 
-def get_logger(name: str | None = None):
+class _StructlogLikeLogger:
+    """兼容 structlog 调用风格的 loguru 包装：log.info(event, field=value)."""
+
+    def __init__(self, name: str | None = None):
+        self._name = name
+
+    def _log(self, level: str, event: str, **kwargs: Any) -> None:
+        extra: dict[str, Any] = {}
+        if self._name:
+            extra["logger_name"] = self._name
+        extra.update(kwargs)
+        logger.bind(**extra).log(level, event)
+
+    def info(self, event: str, **kwargs: Any) -> None:
+        self._log("INFO", event, **kwargs)
+
+    def warning(self, event: str, **kwargs: Any) -> None:
+        self._log("WARNING", event, **kwargs)
+
+    def error(self, event: str, **kwargs: Any) -> None:
+        self._log("ERROR", event, **kwargs)
+
+    def debug(self, event: str, **kwargs: Any) -> None:
+        self._log("DEBUG", event, **kwargs)
+
+
+def get_logger(name: str | None = None) -> _StructlogLikeLogger:
     """获取结构化 logger."""
-    return structlog.get_logger(name)
+    return _StructlogLikeLogger(name)

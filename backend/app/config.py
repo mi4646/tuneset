@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     # 我喜欢推送
     fav_push_interval: int = 300  # 推送/缓存刷新间隔（秒）
 
+    # 日志（loguru，文件持久化 + rotation）
+    log_file: str = "/app/logs/app.log"  # 日志文件路径（容器内，docker volume 挂载宿主机）
+    log_max_bytes: int = 10 * 1024 * 1024  # 单文件最大字节，超出 rotation（默认 10MB）
+    log_backup_count: int = 5  # 保留旧日志文件数
+
     # 限流
     rate_limit_user_daily: int = 30
     rate_limit_ip_hourly: int = 20

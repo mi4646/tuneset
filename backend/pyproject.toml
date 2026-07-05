@@ -17,7 +17,7 @@ dependencies = [
     "langgraph",
     "langgraph-checkpoint-redis",
     "qqmusic-api-python",
-    "structlog",
+    "loguru",
 ]
 
 [project.optional-dependencies]
