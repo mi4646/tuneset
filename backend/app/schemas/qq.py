@@ -28,3 +28,4 @@ class SubscribeResponse(BaseModel):
     stream_id: str
     songs: list
     total: int
+    interval: int

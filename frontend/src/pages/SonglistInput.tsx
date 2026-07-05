@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { songlistApi, classifyApi, getCredential } from "../api";
 import type { SongItem } from "../types";
@@ -21,23 +21,59 @@ export default function SonglistInput() {
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [pushInterval, setPushInterval] = useState(300);
+  const [streaming, setStreaming] = useState(false);
   const nav = useNavigate();
   const hasQq = !!getCredential();
+  const evtRef = useRef<EventSource | null>(null);
 
   const parseSonglistId = (s: string): number | null => {
     const m = s.match(/id=(\d+)/) || s.match(/(\d+)/);
     return m ? Number(m[1]) : null;
   };
 
-  const loadFav = async () => {
+  // 订阅"我喜欢"实时推送：subscribe 拿 stream_id + 首批数据，EventSource 接收后续更新
+  const subscribeFav = async () => {
     setLoading(true);
     setErr("");
     try {
       const cred = getCredential();
       if (!cred) throw new Error("未登录 QQ 音乐");
-      const r = await songlistApi.favorite(cred);
+      // 关闭旧连接
+      if (evtRef.current) {
+        evtRef.current.close();
+        evtRef.current = null;
+      }
+      setStreaming(false);
+      const r = await songlistApi.subscribeFavorite(cred);
       setSongs(parseSongItems(r.data?.songs || []));
       setLoaded(true);
+      setPushInterval(r.data?.interval || 300);
+      // 启动 EventSource 订阅实时更新
+      const es = new EventSource(songlistApi.streamUrl(r.data.stream_id));
+      es.onopen = () => setStreaming(true);
+      es.addEventListener("fav_update", (e: MessageEvent) => {
+        try {
+          const data = JSON.parse(e.data);
+          if (data.error) {
+            setErr(`推送失败：${data.error}`);
+            return;
+          }
+          if (data.songs) {
+            // 保留旧列表直到新数据返回（直接覆盖，React 异步渲染不会闪烁）
+            setSongs(parseSongItems(data.songs));
+          }
+        } catch {
+          // ignore parse error
+        }
+      });
+      es.onerror = () => {
+        es.close();
+        evtRef.current = null;
+        setStreaming(false);
+        setErr("实时推送已断开，点刷新重试");
+      };
+      evtRef.current = es;
     } catch (e: unknown) {
       const msg =
         (e as { response?: { data?: { detail?: string } } }).response?.data?.detail ||
@@ -48,6 +84,19 @@ export default function SonglistInput() {
       setLoading(false);
     }
   };
+
+  // 自动加载：hasQq 时进入页面即订阅
+  useEffect(() => {
+    if (!hasQq) return;
+    subscribeFav();
+    return () => {
+      if (evtRef.current) {
+        evtRef.current.close();
+        evtRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasQq]);
 
   const load = async () => {
     setLoading(true);
@@ -85,6 +134,11 @@ export default function SonglistInput() {
     }
   };
 
+  const intervalText =
+    pushInterval >= 60
+      ? `每 ${Math.round(pushInterval / 60)} 分钟自动刷新`
+      : `每 ${pushInterval} 秒自动刷新`;
+
   return (
     <div className="page">
       <h1>选择歌单</h1>
@@ -107,7 +161,7 @@ export default function SonglistInput() {
         <div className="entry">
           <h2>扫码取"我喜欢"</h2>
           {hasQq ? (
-            <button className="btn" onClick={loadFav} disabled={loading}>
+            <button className="btn" onClick={subscribeFav} disabled={loading}>
               加载我的喜欢
             </button>
           ) : (
@@ -128,10 +182,26 @@ export default function SonglistInput() {
       {songs.length > 0 && (
         <div className="songlist">
           <div className="songlist-head">
-            <span>已加载 {songs.length} 首</span>
-            <button className="btn" onClick={start} disabled={loading}>
-              开始分类
-            </button>
+            <span>
+              已加载 {songs.length} 首
+              {streaming && hasQq && (
+                <span className="stream-hint"> · {intervalText}</span>
+              )}
+            </span>
+            <div className="songlist-actions">
+              {hasQq && (
+                <button
+                  className="btn btn-ghost"
+                  onClick={subscribeFav}
+                  disabled={loading}
+                >
+                  刷新
+                </button>
+              )}
+              <button className="btn" onClick={start} disabled={loading}>
+                开始分类
+              </button>
+            </div>
           </div>
           <div className="songlist-body">
             {songs.map((s, i) => (

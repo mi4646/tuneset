@@ -48,6 +48,13 @@ export interface SharedSonglistResponse {
   songs: Record<string, unknown>[];
 }
 
+export interface SubscribeResponse {
+  stream_id: string;
+  songs: Record<string, unknown>[];
+  total: number;
+  interval: number;
+}
+
 export interface StartResponse {
   thread_id: string;
   status: string;

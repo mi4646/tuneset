@@ -48,7 +48,12 @@ async def subscribe_favorite(body: FavSongRequest):
     # 生成 stream_id
     stream_id = secrets.token_urlsafe(16)
     await async_redis.setex(f"fav:stream:{stream_id}", 60, euin)
-    return SubscribeResponse(stream_id=stream_id, songs=songs, total=total)
+    return SubscribeResponse(
+        stream_id=stream_id,
+        songs=songs,
+        total=total,
+        interval=settings.fav_push_interval,
+    )
 
 
 @router.get("/stream/{stream_id}")

@@ -8,6 +8,7 @@ import type {
   SongItem,
   StartResponse,
   StateResponse,
+  SubscribeResponse,
   TokenPair,
   User,
 } from "./types";
@@ -109,6 +110,9 @@ export const songlistApi = {
     api.post<SharedSonglistResponse>("/songlist/shared", { songlist_id }),
   favorite: (credential: Record<string, unknown>) =>
     api.post<SharedSonglistResponse>("/songlist/favorite", { credential }),
+  subscribeFavorite: (credential: Record<string, unknown>) =>
+    api.post<SubscribeResponse>("/songlist/favorite/subscribe", { credential }),
+  streamUrl: (stream_id: string) => `/api/stream/${stream_id}`,
 };
 
 export const classifyApi = {
