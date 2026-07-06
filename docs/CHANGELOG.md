@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [0.5.7] - 2026-07-06
+
+### Fixed
+- uvicorn 转发日志到 loguru 时 `InterceptHandler.emit` 未 bind `logger_name`，导致 `_text_patcher` fallback 到 `-`（如 `2026-07-06 08:34:52 | INFO | - | ...`）。改为 `bind(logger_name=record.name)`，uvicorn/uvicorn.access/uvicorn.error 日志显示对应 logger 名
+- `setup_logging` 原仅在 FastAPI lifespan 调用，导致：(1) uvicorn 启动早期 2 条日志（`Started server process` / `Waiting for application startup.`）在 lifespan 之前输出未走 loguru（`INFO:` 原生格式）；(2) worker/beat 不走 lifespan，celery 日志全用原生格式且未持久化。改为 `main.py` import 时即调用（幂等 `_initialized`），`celery_app.py` 连接 `signals.setup_logging` 接管 celery logging；拦截 `celery`/`celery.task` logger 并 `setLevel(DEBUG)` 避免 INFO 被标准 logging 层过滤
+
 ## [0.5.6] - 2026-07-06
 
 ### Fixed
