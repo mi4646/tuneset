@@ -32,7 +32,7 @@
 
 ## 日志规范
 
-后端使用 `loguru`（JSON 结构化输出 + 文件持久化），前端不强制。
+后端使用 `loguru`（纯文本人类可读输出 + 文件持久化），前端不强制。
 
 ### 级别
 
@@ -45,7 +45,18 @@
 
 - `event`：事件名（snake_case，如 `qq_login_done`）
 - `level`：日志级别（loguru 自动加）
-- `timestamp`：ISO8601 UTC（loguru 自动加）
+- `timestamp`：UTC（format 自动渲染，格式 `YYYY-MM-DD HH:mm:ss.SSS`）
+
+### 输出格式
+
+纯文本单行，` | ` 分隔：`时间(UTC) | 级别(左对齐8位) | logger名 | event | 业务字段 k=v`。无业务字段时尾部 `k=v` 段省略。健康检查 access log（`/api/health 200`）过滤不输出。
+
+### 语言约定
+
+- `event` 名：英文 snake_case（机器字段，便于 grep/告警/统计锚点）
+- 业务描述性字段（如 `reason`、`error`、`detail`、`提示` 等）：用中文，便于运维理解
+- 第三方库自带消息（uvicorn 等）：保持原文，不强制翻译
+- 示例：`log.warning("qq_login_failed", reason="设备超限")`，而非 `reason="device limit exceeded"`
 
 ### 业务字段（按场景）
 

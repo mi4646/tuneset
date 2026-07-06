@@ -1,11 +1,11 @@
-"""结构化日志配置. 基于 loguru，JSON 输出 + 文件持久化 + rotation.
+"""纯文本日志配置. 基于 loguru，人类可读 + 文件持久化 + rotation.
 
 调用方式兼容 structlog 风格：log.info("event_name", field=value)
 规范见 CLAUDE.md "日志规范" 章节.
 """
-import json
 import logging
 import sys
+from datetime import timezone
 from typing import Any
 
 from loguru import logger
@@ -35,31 +35,41 @@ class InterceptHandler(logging.Handler):
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
-def _json_patcher(record: dict) -> None:
-    """patcher：把 record 序列化为扁平 JSON 存入 extra[_json].
+# 纯文本 format：时间(UTC) | 级别(左对齐8位) | logger名 | event | 业务字段 k=v
+_LOG_FORMAT = "{extra[_ts]} | {level: <8} | {extra[logger_name]} | {message}{extra[_kv]}"
 
-    避免 format callable 返回 JSON 时 {} 被 loguru 当占位符.
+# 元字段（不作为业务字段输出到 k=v 段）
+_META_KEYS = {"logger_name", "_ts", "_kv"}
+
+
+def _text_patcher(record: dict) -> None:
+    """patcher：统一时间 UTC、补 logger 名、拼业务字段 k=v.
+
+    纯文本格式下替代 JSON 序列化，保留可读的结构化字段.
     """
-    subset: dict[str, Any] = {
-        "timestamp": record["time"].isoformat() + "Z",
-        "level": record["level"].name,
-        "event": record["message"],
-    }
-    for k, v in record["extra"].items():
-        if k == "_json" or k in subset:
-            continue  # 不覆盖日志元字段（timestamp/level/event）
-        subset[k] = v
-    record["extra"]["_json"] = json.dumps(subset, ensure_ascii=False, default=str)
+    utc_time = record["time"].astimezone(timezone.utc)
+    record["extra"]["_ts"] = utc_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    record["extra"]["logger_name"] = record["extra"].get("logger_name") or "-"
+    parts = [f"{k}={v}" for k, v in record["extra"].items() if k not in _META_KEYS]
+    record["extra"]["_kv"] = (" | " + " ".join(parts)) if parts else ""
+
+
+def _health_check_filter(record: dict) -> bool:
+    """过滤 /api/health 200 access log，避免健康检查淹没业务日志."""
+    msg = record.get("message", "")
+    if "/api/health" in msg and msg.rstrip().endswith(" 200"):
+        return False
+    return True
 
 
 def setup_logging() -> None:
     """初始化 loguru. 在 FastAPI lifespan 启动时调用一次.
 
     双输出：stdout（docker logs）+ 文件（持久化，rotation，多进程安全 via enqueue）.
-    标准 logging（uvicorn 等）通过 InterceptHandler 转发到 loguru.
+    纯文本格式，人类可读. 标准 logging（uvicorn 等）通过 InterceptHandler 转发到 loguru.
     """
     logger.remove()
-    logger.configure(patcher=_json_patcher)
+    logger.configure(patcher=_text_patcher)
     # intercept uvicorn 标准 logging 到 loguru
     # 不拦截 root logger（logging.basicConfig force=True），避免影响第三方库（qqmusic_api/httpx 等）
     for name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
@@ -69,19 +79,21 @@ def setup_logging() -> None:
     # stdout（docker logs 仍可用）
     logger.add(
         sys.stdout,
-        format="{extra[_json]}",
+        format=_LOG_FORMAT,
         level="INFO",
+        filter=_health_check_filter,
     )
     # 文件（持久化 + rotation + 多进程安全）
     logger.add(
         settings.log_file,
-        format="{extra[_json]}",
+        format=_LOG_FORMAT,
         rotation=settings.log_max_bytes,
         retention=settings.log_backup_count,
         compression="zip",
         level="INFO",
         enqueue=True,  # 多进程安全（celery worker prefork）
         encoding="utf-8",
+        filter=_health_check_filter,
     )
 
 
