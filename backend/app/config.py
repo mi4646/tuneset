@@ -73,14 +73,19 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:5173"]
 
     @model_validator(mode="after")
-    def _validate_production_secrets(self) -> "Settings":
-        """生产环境强制校验密钥类配置，拒绝默认/空值"""
+    def _validate_secrets(self) -> "Settings":
+        """密钥校验：AI_API_KEY 任何环境必须真实（分类硬依赖）；SECRET_KEY/SUPERADMIN_PASSWORD 仅 production 强制"""
+        # AI_API_KEY：dev 下分类功能也依赖它，任何环境都拒绝占位符/空，启动即报
+        if self.ai_api_key in _WEAK_SECRETS:
+            raise ValueError(
+                f"AI_API_KEY 未配置：请在 .env 填入真实 API Key（当前值={self.ai_api_key!r}，"
+                f"占位符/空值不被接受）"
+            )
+        # SECRET_KEY / SUPERADMIN_PASSWORD：仅 production 强制（dev 允许 change-me 便于测试）
         if self.app_env != "production":
             return self
         if self.secret_key in _WEAK_SECRETS:
             raise ValueError("生产环境 SECRET_KEY 必须配置为有效值（禁止 change-me/<改>/空）")
-        if self.ai_api_key in _WEAK_SECRETS:
-            raise ValueError("生产环境 AI_API_KEY 必须配置为有效值")
         if self.superadmin_password in _WEAK_SECRETS:
             raise ValueError("生产环境 SUPERADMIN_PASSWORD 必须配置为有效值")
         return self

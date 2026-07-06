@@ -9,6 +9,7 @@ os.environ.setdefault("CELERY_RESULT_BACKEND", "redis://localhost:6380/2")
 os.environ.setdefault("CLASSIFY_MAX_SONGS", "2000")
 os.environ.setdefault("CLASSIFY_BATCH_SIZE", "2")
 os.environ.setdefault("RATE_LIMIT_USER_DAILY", "2")
+os.environ.setdefault("AI_API_KEY", "test-key-for-pytest")
 
 import pytest
 from fastapi.testclient import TestClient
