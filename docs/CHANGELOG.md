@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+## [0.5.1] - 2026-07-06
+
+### Fixed
+- `check_user_daily`（每用户每日分类上限）此前为死代码——定义了但未挂任何端点，AI 成本控制形同虚设。新增 `enforce_classify_limits`（先 daily 后 interval），`start` 端点启用，日限真正生效
+- `start` 端点 songs 数量校验提前到限流之前：songs 超量被拒不再消耗 30 秒间隔，用户改数量后可立即重试
+
+### Changed
+- `IPRateLimitMiddleware` 从全局（所有 `/api/*`）收窄到仅 `/api/auth/register`、`/api/auth/login`（防刷账号）；分类等业务端点靠用户级日限 + 分类间隔控制。修复 NAT 网络下正常用户被 IP 20/h 误限问题
+- 429 响应 detail 中文化（"已达每日分类上限 N 次" / "操作过于频繁，N 秒后重试" / "IP 请求过于频繁，请稍后再试"）
+
+### Removed
+- `check_user_daily` / `check_classify_interval` 两个 Depends（被 `enforce_classify_limits` 取代）
+
 ## [0.5.0] - 2026-07-06
 
 ### Added
