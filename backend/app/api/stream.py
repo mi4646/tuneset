@@ -6,31 +6,38 @@ stream 端点：EventSource 订阅，后端通过 Redis pub/sub 推送更新.
 import json
 import secrets
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from qqmusic_api import Credential
+from sqlalchemy.orm import Session
 
+from app.auth.deps import get_current_user
 from app.config import settings
+from app.db.base import get_db
 from app.logging import get_logger, mask
+from app.models import User
+from app.qqmusic.credential_store import get_valid_credential
 from app.qqmusic.fav import fetch_fav_songs
 from app.redis_async import async_redis
-from app.schemas.qq import FavSongRequest, SubscribeResponse
+from app.schemas.qq import SubscribeResponse
 
 router = APIRouter()
 log = get_logger(__name__)
 
 
 @router.post("/songlist/favorite/subscribe", response_model=SubscribeResponse)
-async def subscribe_favorite(body: FavSongRequest):
-    """订阅"我喜欢"实时推送. 返回 stream_id + 首批数据."""
-    cred = Credential(**body.credential)
+async def subscribe_favorite(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """订阅"我喜欢"实时推送. 返回 stream_id + 首批数据. credential 从服务端持久化取（方案⑤调整）。"""
+    cred = await get_valid_credential(db, user.id)
     if not cred.encrypt_uin:
         raise HTTPException(
             status_code=400,
             detail="credential 缺少 encrypt_uin，请重新扫码登录",
         )
     euin = cred.encrypt_uin
-    cred_json = json.dumps(body.credential)
+    cred_json = cred.model_dump_json()
     ttl = settings.fav_push_interval * 2
     # 缓存 credential（活跃标记 + 后续刷新用）
     await async_redis.setex(f"fav:cred:{euin}", ttl, cred_json)
