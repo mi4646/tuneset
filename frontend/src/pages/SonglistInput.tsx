@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { songlistApi, classifyApi, getCredential } from "../api";
+import { songlistApi, classifyApi, qqApi } from "../api";
 import type { SongItem } from "../types";
 import Spinner from "../components/Spinner";
 
@@ -24,7 +24,13 @@ export default function SonglistInput() {
   const [pushInterval, setPushInterval] = useState(300);
   const [streaming, setStreaming] = useState(false);
   const nav = useNavigate();
-  const hasQq = !!getCredential();
+  const [hasQq, setHasQq] = useState(false);
+  useEffect(() => {
+    qqApi
+      .status()
+      .then((r) => setHasQq(r.data.bound))
+      .catch(() => setHasQq(false));
+  }, []);
   const evtRef = useRef<EventSource | null>(null);
 
   const parseSonglistId = (s: string): number | null => {
@@ -37,15 +43,13 @@ export default function SonglistInput() {
     setLoading(true);
     setErr("");
     try {
-      const cred = getCredential();
-      if (!cred) throw new Error("未登录 QQ 音乐");
       // 关闭旧连接
       if (evtRef.current) {
         evtRef.current.close();
         evtRef.current = null;
       }
       setStreaming(false);
-      const r = await songlistApi.subscribeFavorite(cred);
+      const r = await songlistApi.subscribeFavorite();
       setSongs(parseSongItems(r.data?.songs || []));
       setLoaded(true);
       setPushInterval(r.data?.interval || 300);

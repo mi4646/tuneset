@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { qqApi, setCredential } from "../api";
+import { qqApi } from "../api";
 import { useAuth } from "../hooks/useAuth";
 import Spinner from "../components/Spinner";
 
@@ -40,8 +40,7 @@ export default function QrLogin() {
           if (stopped) return;
           try {
             const c = await qqApi.check(r.data.identifier);
-            if (c.data.done && c.data.credential) {
-              setCredential(c.data.credential);
+            if (c.data.done && c.data.bound) {
               if (timer) clearInterval(timer);
               setStatus("success");
               setTimeout(() => {

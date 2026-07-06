@@ -3,6 +3,7 @@ import type {
   CheckQrResponse,
   ConfirmResponse,
   DragFeedback,
+  QqStatusResponse,
   QrCodeResponse,
   SharedSonglistResponse,
   SongItem,
@@ -33,19 +34,6 @@ export function clearToken() {
 
 export function isLoggedIn() {
   return !!localStorage.getItem("token");
-}
-
-export function getCredential(): Record<string, unknown> | null {
-  const raw = sessionStorage.getItem("qq_credential");
-  return raw ? JSON.parse(raw) : null;
-}
-
-export function setCredential(cred: Record<string, unknown>) {
-  sessionStorage.setItem("qq_credential", JSON.stringify(cred));
-}
-
-export function clearCredential() {
-  sessionStorage.removeItem("qq_credential");
 }
 
 let refreshing: Promise<string> | null = null;
@@ -107,15 +95,16 @@ export const qqApi = {
   qrcode: () => api.post<QrCodeResponse>("/qq/qrcode"),
   check: (identifier: string) =>
     api.post<CheckQrResponse>("/qq/check", { identifier }),
+  status: () => api.get<QqStatusResponse>("/qq/status"),
+  unbind: () => api.post("/qq/unbind"),
 };
 
 export const songlistApi = {
   shared: (songlist_id: number) =>
     api.post<SharedSonglistResponse>("/songlist/shared", { songlist_id }),
-  favorite: (credential: Record<string, unknown>) =>
-    api.post<SharedSonglistResponse>("/songlist/favorite", { credential }),
-  subscribeFavorite: (credential: Record<string, unknown>) =>
-    api.post<SubscribeResponse>("/songlist/favorite/subscribe", { credential }),
+  favorite: () => api.post<SharedSonglistResponse>("/songlist/favorite"),
+  subscribeFavorite: () =>
+    api.post<SubscribeResponse>("/songlist/favorite/subscribe"),
   streamUrl: (stream_id: string) => `/api/stream/${stream_id}`,
 };
 
@@ -129,7 +118,7 @@ export const classifyApi = {
   ) => api.post<StartResponse>(`/classify/${thread_id}/feedback`, data),
   confirm: (
     thread_id: string,
-    data: { credential: Record<string, unknown>; dirname_template?: string }
+    data: { dirname_template?: string }
   ) => api.post<ConfirmResponse>(`/classify/${thread_id}/confirm`, data),
   cancel: (thread_id: string) =>
     api.post<{ cancelled: boolean; thread_id: string }>(

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { classifyApi, getCredential } from "../api";
+import { classifyApi } from "../api";
 import type { ConfirmResult, DragFeedback, ProposalItem } from "../types";
 
 const MAX_ITERATIONS = 5;
@@ -62,15 +62,10 @@ export function useClassify(threadId: string) {
   };
 
   const confirm = async () => {
-    const cred = getCredential();
-    if (!cred) {
-      setErr("请先扫码登录 QQ 音乐");
-      return;
-    }
     setSubmitting(true);
     setErr("");
     try {
-      const r = await classifyApi.confirm(threadId, { credential: cred });
+      const r = await classifyApi.confirm(threadId, {});
       setResults(r.data.results);
     } catch (e: unknown) {
       const msg = (e as { response?: { data?: { detail?: string } } }).response?.data

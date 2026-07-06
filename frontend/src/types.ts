@@ -41,7 +41,12 @@ export interface QrCodeResponse {
 export interface CheckQrResponse {
   done: boolean;
   event?: string;
-  credential?: Record<string, unknown>;
+  bound?: boolean;
+}
+
+export interface QqStatusResponse {
+  bound: boolean;
+  euin_masked?: string;
 }
 
 export interface SharedSonglistResponse {
