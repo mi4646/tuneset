@@ -1,10 +1,13 @@
-"""用户级 + 频率限流依赖. classify 端点用."""
+"""用户级限流. classify 端点用.
+
+enforce_classify_limits: 合并每日上限（控 AI 成本）+ 分类间隔（防高频 start）。
+songs 数量校验应在调用前完成，避免无效请求消耗间隔。
+"""
 
 import time
 
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 
-from app.auth.deps import get_current_user
 from app.config import settings
 from app.models import User
 from app.redis_client import redis_client
@@ -13,23 +16,28 @@ _USER_DAILY_KEY = "rl:user:{uid}:{date}"
 _CLASSIFY_INTERVAL_KEY = "rl:classify:{uid}"
 
 
-def check_user_daily(user: User = Depends(get_current_user)) -> User:
-    """每用户每天 rate_limit_user_daily 次."""
+def enforce_classify_limits(user: User) -> None:
+    """分类限流：先查每日上限（控成本），再查间隔（防高频）.
+
+    songs 数量校验应在调用此函数前完成——避免无效请求消耗间隔。
+    """
+    # 1. 每日上限（控 AI 成本）
     date = time.strftime("%Y%m%d")
-    key = _USER_DAILY_KEY.format(uid=user.id, date=date)
-    count = redis_client.incr(key)
+    daily_key = _USER_DAILY_KEY.format(uid=user.id, date=date)
+    count = redis_client.incr(daily_key)
     if count == 1:
-        redis_client.expire(key, 86400)
+        redis_client.expire(daily_key, 86400)
     if count > settings.rate_limit_user_daily:
-        raise HTTPException(status_code=429, detail="Daily classify limit exceeded")
-    return user
-
-
-def check_classify_interval(user: User = Depends(get_current_user)) -> User:
-    """每次分类间隔 rate_limit_classify_interval 秒."""
-    key = _CLASSIFY_INTERVAL_KEY.format(uid=user.id)
-    ttl = redis_client.ttl(key)
+        raise HTTPException(
+            status_code=429,
+            detail=f"已达每日分类上限 {settings.rate_limit_user_daily} 次",
+        )
+    # 2. 间隔限流（防高频 start）
+    interval_key = _CLASSIFY_INTERVAL_KEY.format(uid=user.id)
+    ttl = redis_client.ttl(interval_key)
     if ttl > 0:
-        raise HTTPException(status_code=429, detail=f"Too frequent, retry in {ttl}s")
-    redis_client.setex(key, settings.rate_limit_classify_interval, "1")
-    return user
+        raise HTTPException(
+            status_code=429,
+            detail=f"操作过于频繁，{ttl} 秒后重试",
+        )
+    redis_client.setex(interval_key, settings.rate_limit_classify_interval, "1")

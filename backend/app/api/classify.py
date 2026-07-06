@@ -17,7 +17,7 @@ from app.db.base import get_db
 from app.models import User
 from app.qqmusic.client import QQMusicClient
 from app.qqmusic.credential_store import get_valid_credential
-from app.ratelimit.deps import check_classify_interval
+from app.ratelimit.deps import enforce_classify_limits
 from app.redis_async import async_redis
 from app.schemas.classify import (
     ConfirmRequest,
@@ -36,13 +36,15 @@ router = APIRouter()
 @router.post("/start", response_model=StartResponse)
 def start(
     body: StartRequest,
-    user: User = Depends(check_classify_interval),
+    user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> StartResponse:
     if not body.songs:
         raise HTTPException(status_code=400, detail="no songs")
     if len(body.songs) > settings.classify_max_songs:
         raise HTTPException(status_code=400, detail=f"max {settings.classify_max_songs} songs")
+    # songs 校验通过后再限流（避免无效请求消耗间隔）
+    enforce_classify_limits(user)
     thread_id = str(uuid.uuid4())
     songs = [s.model_dump() for s in body.songs]
     classify_task.delay(songs, user.id, thread_id)

@@ -58,3 +58,32 @@ def test_start_no_songs(client, auth_headers, mock_ai):
 def test_state_not_found(client, auth_headers):
     r = client.get("/api/classify/nonexistent", headers=auth_headers)
     assert r.status_code == 404
+
+
+def test_start_daily_limit(client, auth_headers, mock_ai):
+    """每日上限：RATE_LIMIT_USER_DAILY=2，第 3 次 start 被 429."""
+    from app.redis_client import redis_client
+
+    songs = [{"song_id": 1, "song_type": 0, "name": "测试", "singer": "测试"}]
+    for _ in range(2):
+        r = client.post("/api/classify/start", json={"songs": songs}, headers=auth_headers)
+        assert r.status_code == 200, r.text
+        # 清 interval key，避免间隔拦截下次请求；daily key 保留累计
+        for k in redis_client.keys("rl:classify:*"):
+            redis_client.delete(k)
+    # 第 3 次应被每日上限拦截
+    r = client.post("/api/classify/start", json={"songs": songs}, headers=auth_headers)
+    assert r.status_code == 429
+    assert "每日" in r.json()["detail"]
+
+
+def test_start_songs_over_limit_no_interval_consumed(client, auth_headers, mock_ai):
+    """songs 超量被拒不应消耗间隔：连续两次超量请求都应返回 400 而非 429."""
+    songs = [{"song_id": i, "song_type": 0, "name": f"测试{i}", "singer": "测试"} for i in range(1, 2002)]
+    r1 = client.post("/api/classify/start", json={"songs": songs}, headers=auth_headers)
+    assert r1.status_code == 400
+    assert "max" in r1.json()["detail"]
+    # 紧接着第二次（间隔限流应未被 setex，因为 songs 校验在前）
+    r2 = client.post("/api/classify/start", json={"songs": songs}, headers=auth_headers)
+    assert r2.status_code == 400
+    assert "max" in r2.json()["detail"]
