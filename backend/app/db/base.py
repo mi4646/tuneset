@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from pathlib import Path
 
 from sqlalchemy import create_engine, inspect, select, text
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -51,6 +52,7 @@ def _migrate_users_qq_fields() -> None:
 
 def init_db() -> None:
     """建表。开发期用 create_all；生产迁移后续引入 alembic。"""
+    Path(settings.sqlite_path).parent.mkdir(parents=True, exist_ok=True)
     from app.models import AuditLog, InviteCode, User  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
