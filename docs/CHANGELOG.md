@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-06
+
+### Changed
+- "我喜欢"歌曲拉取去除 500 首截断上限，改为全量拉取（`fetch_fav_songs` 的 `max` 默认值由 `_FAV_MAX=500` 改为 `None`，`/favorite` 端点、SSE 订阅、Celery 缓存三处调用点自动生效）
+
+### Fixed
+- 分享歌单 `/shared` 端点缺失分页循环，仅返回前 50 首：新增 `fetch_songlist_songs` 全量分页拉取，返回结构与 `/favorite` 对齐
+
 ## [0.2.2] - 2026-07-06
 
 ### Changed
