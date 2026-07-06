@@ -32,7 +32,7 @@ class InterceptHandler(logging.Handler):
         while frame and frame.f_code.co_filename == logging.__file__:
             frame = frame.f_back
             depth += 1
-        logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
+        logger.bind(logger_name=record.name).opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
 # 纯文本 format：时间(UTC) | 级别(左对齐8位) | logger名 | event | 业务字段 k=v
