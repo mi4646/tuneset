@@ -82,6 +82,7 @@ def setup_logging() -> None:
         format=_LOG_FORMAT,
         level="INFO",
         filter=_health_check_filter,
+        diagnose=False,
     )
     # 文件（持久化 + rotation + 多进程安全）
     logger.add(
@@ -94,6 +95,7 @@ def setup_logging() -> None:
         enqueue=True,  # 多进程安全（celery worker prefork）
         encoding="utf-8",
         filter=_health_check_filter,
+        diagnose=False,
     )
 
 

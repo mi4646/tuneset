@@ -20,9 +20,9 @@ class QQMusicClient:
 
     async def __aenter__(self) -> "QQMusicClient":
         await self._client.__aenter__()
-        # qqmusic_api 0.6.8 的 Client 不暴露 timeout 入口，默认 30s connect / 120s read；
-        # 扫码授权场景 120s read 太长（网络抖动时用户卡死），缩短到 connect=5s / read=10s
-        self._client._session.timeout = (5, 10)
+        # qqmusic_api 0.6.8 的 Client 不暴露 timeout 入口；
+        # connect=5s 不通快速失败，read=30s 容忍 QQ 音乐偶发慢接口（实测首次冷启动 ~5.1s）
+        self._client._session.timeout = (5, 30)
         return self
 
     async def __aexit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> None:
