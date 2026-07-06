@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-07-06
+
+### Changed
+- `AI_API_KEY` 密钥校验从 production-only 放宽到任何环境都拒绝占位符/空值（dev 也校验）。此前 dev 下 `AI_API_KEY=<改>` 能启动，直到 worker 调 AI 时才报 `ascii codec can't encode character '改'` 不透明错误；现在启动即报"AI_API_KEY 未配置：请在 .env 填入真实 API Key"。`SECRET_KEY` / `SUPERADMIN_PASSWORD` 仍保持 dev 宽松（仅 production 强制）
+
 ## [0.5.2] - 2026-07-06
 
 ### Fixed
