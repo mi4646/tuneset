@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-07-06
+
+### Changed
+- 前端错误展示重构：页面内 `<p className="text-destructive">` 文本改为弹框
+  - API 错误（登录/注册/加载/启动/反馈/确认失败、SSE 推送断开、超量拦截）→ sonner toast 右上角通知
+  - 表单校验错误（邮箱/密码格式）→ 输入框下方就近提示（`role="alert"`），关联具体字段
+  - 分类任务失败（streamError）→ shadcn Dialog 模态框（流程终止级别，含"返回重选"按钮，强制用户确认）
+
+### Added
+- `frontend/src/components/ui/dialog.tsx`（shadcn 风格，基于 radix-ui 统一包，无新增依赖）
+
 ## [0.5.3] - 2026-07-06
 
 ### Changed
