@@ -24,6 +24,7 @@
 - **QQ登录态**：服务端持久化加密 credential（SQLite `users.qq_credential_enc`，Fernet 加密 `secret_key`），跨会话/跨设备共享；`refresh_token` 自动刷新 musickey，避免频繁扫码导致 20279 设备超限；SSE 推送仍按 euin 临时缓存（Redis，TTL=推送间隔×2，连接断开清理）；解绑走 `/api/qq/unbind`（方案⑤调整，独立于账号 JWT）
 - **AI 成本**：开发者承担，所有用户共用 → 必须强限流（用户级 + IP/频率/单次/轮次上限）
 - **分类模式 C（多轮 HITL）**：AI 提议 → 用户拖拽+对话反馈 → AI 带上下文重分类，**最多 5 轮** → 确认落库
+- **分批分类**：songs > `classify_batch_size`（默认 200）时按顺序切批，各批独立分类 → `merge` 节点归一化同义类名 → 统一一轮 HITL；单次总上限 `classify_max_songs`（默认 2000），日限 `rate_limit_user_daily`（默认 10）按"次"计（1 次=多批）；`/classify/start` 异步返回 thread_id，SSE 推批次进度；设计详见 `docs/superpowers/plans/batch-classify-design.md`
 - **反馈形式**：拖拽（dnd-kit）+ 对话文本输入结合
 - **分类依据**：歌名+歌手+`get_labels` 标签，缺标签补 `get_lyric` 歌词
 - **双入口**：扫码登录取"我喜欢" / 粘贴分享链接取任意歌单
@@ -32,6 +33,7 @@
 
 ## 开发流程
 
+- **干活前先提问**：收到非平凡任务时，先向【陛下】提问直到获取完美执行任务所需的全部背景信息，再动手。每项提问给出"你有什么建议？附理由。有什么疑问，与我沟通！"——不擅自决策、不沉默选路。设计类任务先产出方案文档（`docs/superpowers/plans/`）经陛下拍板再落代码。
 - **功能完成后自审**：每次添加完功能，先自审/review改动（正确性、边界、是否符合现有约定），再决定：
   - 自审通过 → 直接 commit（提交规范见 `docs/CONTRIBUTING.md`）
   - 自审发现问题 → **不擅自决策**，告知用户问题 + 建议方案，由用户拍板
@@ -127,4 +129,4 @@ log.info("event_name", field=value, euin_masked=mask(euin))
 - 完整方案决策：`docs/plan.md`
 - QQMusicApi 接口确认：`docs/qqmusic-api-interfaces.md`
 - 变更记录：`docs/CHANGELOG.md`
-- `docs/superpowers/`：本地设计 spec，**本项目入库**（例外于全局 CLAUDE.md 第 5 条；其他项目默认仍过滤）
+- `docs/superpowers/`：本地设计 spec，**本项目入库**（例外于全局 CLAUDE.md 第 5 条；其他项目默认仍过滤）。**计划/设计文档放 `docs/superpowers/plans/`**
