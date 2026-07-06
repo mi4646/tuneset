@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+## [0.5.2] - 2026-07-06
+
+### Fixed
+- 前端 nginx 反代 backend 用静态 `proxy_pass http://backend:8000`，启动时只解析一次主机名并缓存 IP——backend 容器重建后 IP 变化，nginx 仍连旧 IP 导致 502 Bad Gateway。改为 `resolver 127.0.0.11 valid=10s` + 变量化 upstream 动态解析，backend 重建后最多 10 秒自动切到新 IP，部署后无需手动重启 frontend
+
 ## [0.5.1] - 2026-07-06
 
 ### Fixed
