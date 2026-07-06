@@ -16,7 +16,7 @@ dependencies = [
     "celery",
     "langgraph",
     "langgraph-checkpoint-redis",
-    "qqmusic-api-python",
+    "qqmusic-api-python==0.6.8",
     "loguru",
 ]
 

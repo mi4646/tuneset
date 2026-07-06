@@ -2,6 +2,7 @@ import base64
 import pickle
 
 from fastapi import APIRouter, HTTPException
+from qqmusic_api.core.exceptions import NetworkError
 
 from app.logging import get_logger, mask
 from app.qqmusic.client import QQMusicClient
@@ -33,8 +34,12 @@ async def check_qrcode(body: CheckQrRequest) -> CheckQrResponse:
     if raw is None:
         raise HTTPException(status_code=404, detail="QR expired or not found")
     qr = pickle.loads(raw)
-    async with QQMusicClient() as cli:
-        result = await cli.check_qrcode(qr)
+    try:
+        async with QQMusicClient() as cli:
+            result = await cli.check_qrcode(qr)
+    except NetworkError as e:
+        log.warning("qq_check_network_error", error=str(e))
+        return CheckQrResponse(done=False, event="NETWORK_ERROR")
     event_name = result.event.name if hasattr(result.event, "name") else str(result.event)
     resp = CheckQrResponse(done=result.done, event=event_name)
     if result.done and result.credential is not None:

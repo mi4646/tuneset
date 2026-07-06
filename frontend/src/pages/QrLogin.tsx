@@ -4,7 +4,7 @@ import { qqApi, setCredential } from "../api";
 import { useAuth } from "../hooks/useAuth";
 import Spinner from "../components/Spinner";
 
-type QrStatus = "loading" | "waiting" | "scanned" | "success" | "expired" | "error";
+type QrStatus = "loading" | "waiting" | "scanned" | "success" | "expired" | "error" | "network_error";
 
 const STATUS_TEXT: Record<QrStatus, string> = {
   loading: "正在获取二维码…",
@@ -13,6 +13,7 @@ const STATUS_TEXT: Record<QrStatus, string> = {
   success: "登录成功，跳转中…",
   expired: "二维码已过期",
   error: "获取二维码失败",
+  network_error: "网络异常，请重新扫码",
 };
 
 export default function QrLogin() {
@@ -52,6 +53,9 @@ export default function QrLogin() {
                 setStatus("expired");
               } else if (ev === "scanned") {
                 setStatus("scanned");
+              } else if (ev === "NETWORK_ERROR") {
+                if (timer) clearInterval(timer);
+                setStatus("network_error");
               }
             }
           } catch {
@@ -85,7 +89,7 @@ export default function QrLogin() {
   }
 
   const showImg =
-    img && status !== "expired" && status !== "error" && status !== "loading";
+    img && status !== "expired" && status !== "error" && status !== "loading" && status !== "network_error";
 
   return (
     <div className="auth-page">
@@ -105,12 +109,14 @@ export default function QrLogin() {
                 ? "已过期"
                 : status === "error"
                   ? "获取失败"
-                  : "加载中…"}
+                  : status === "network_error"
+                    ? "网络异常"
+                    : "加载中…"}
             </div>
           )}
         </div>
         <p className="qr-status">{STATUS_TEXT[status]}</p>
-        {(status === "expired" || status === "error") && (
+        {(status === "expired" || status === "error" || status === "network_error") && (
           <button className="btn" onClick={() => setQrKey((k) => k + 1)}>
             重新获取
           </button>
