@@ -5,9 +5,9 @@ from app.auth.deps import get_current_user
 from app.db.base import get_db
 from app.logging import get_logger, mask
 from app.models import User
-from app.qqmusic.client import QQMusicClient
 from app.qqmusic.credential_store import get_valid_credential
 from app.qqmusic.fav import fetch_fav_songs
+from app.qqmusic.songlist import fetch_songlist_songs
 from app.schemas.qq import SharedSonglistRequest
 
 router = APIRouter()
@@ -48,6 +48,5 @@ async def get_favorite(
 @router.post("/shared")
 async def get_shared(body: SharedSonglistRequest):
     """取分享歌单歌曲（无需登录态）。"""
-    async with QQMusicClient() as cli:
-        result = await cli.get_songlist_detail(body.songlist_id, num=50)
-    return result
+    songs, total = await fetch_songlist_songs(body.songlist_id)
+    return {"songs": songs, "total": total}

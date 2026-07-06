@@ -1,24 +1,20 @@
-"""我喜欢歌曲拉取. 抽出供 /favorite 端点 + subscribe 端点 + Celery 刷新任务复用."""
-from qqmusic_api import Credential
-
+"""分享歌单歌曲拉取. 仿 fetch_fav_songs，供 /shared 端点复用."""
 from app.qqmusic.client import QQMusicClient
 
 
-async def fetch_fav_songs(
-    cred: Credential, *, max: int | None = None
+async def fetch_songlist_songs(
+    songlist_id: int, *, max: int | None = None
 ) -> tuple[list[dict], int]:
-    """拉取"我喜欢"全部歌曲（dirid=201）。返回 (songs_dict_list, total).
+    """拉取分享歌单全部歌曲。返回 (songs_dict_list, total).
 
     max=None 不限，拉全部；传入正整数则截断到该数量。
     """
-    async with QQMusicClient(cred) as cli:
+    async with QQMusicClient() as cli:
         songs: list = []
         total = 0
         page = 1
         while True:
-            result = await cli.get_fav_song(
-                cred.encrypt_uin, page=page, num=50, credential=cred
-            )
+            result = await cli.get_songlist_detail(songlist_id, num=50, page=page)
             if not total:
                 total = result.total
             songs.extend(result.songs)
