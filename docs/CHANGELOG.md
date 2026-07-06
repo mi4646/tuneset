@@ -1,0 +1,35 @@
+# 变更记录
+
+本项目遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 格式，版本号遵循 [语义化版本](https://semver.org/lang/zh-CN/)。
+
+## [Unreleased]
+
+## [0.2.0] - 2026-07-06
+
+### Added
+- 版本管理机制：根 `VERSION` 文件为单一真相源，`FastAPI(version=)` 暴露后端运行时版本至 `/openapi.json` 与 `/docs`
+- 配置层集中：根 `.env` + `.env.example`，docker / 后端 / 前端共用
+- 前端配置层 `frontend/src/config.ts`，`VITE_` 环境变量可配 + 默认值
+- 生产环境密钥强制校验：`SECRET_KEY` / `AI_API_KEY` / `SUPERADMIN_PASSWORD` 拒绝默认/空值
+- `docs/CHANGELOG.md` 版本记录文档
+
+### Changed
+- 后端 `config.py` 改用 `load_dotenv` 显式加载根 `.env`，去掉 `env_file` 自动读取
+- `docker-compose.yml` 各服务补 `image:` 版本标签，`env_file` 统一指向根 `.env`
+- 前端 `api.ts` / `useClassify` / `QrLogin` 硬编码值改读 `config.ts`（API 基址、扫码轮询间隔、分类最大轮次）
+- `vite.config.ts` 加 `envDir: "../"`，使 vite 读取项目根 `.env`
+
+### Removed
+- `backend/.env`、`backend/.env.example`（迁移至项目根目录）
+
+## [0.1.0] - 2026-07-03
+
+### Added
+- 邀请码注册 + 邮箱密码登录（JWT 鉴权，access/refresh 双 token）
+- QQ 扫码登录态服务端持久化（Fernet 加密，refresh_token 自动刷新 musickey）
+- "我喜欢" / 分享歌单双入口取歌，按 song_id 精确添加保证版本一致性
+- AI 多轮 HITL 分类（LangGraph 工作流 + Redis checkpoint，最多 5 轮反馈）
+- Celery + Redis 任务队列
+- Docker Compose 一键部署（backend / worker / beat / frontend / redis）
+- loguru 纯文本人类可读日志 + 文件持久化 + rotation
+- 邀请码 + 公开注册开关 + 用户级/IP 级限流

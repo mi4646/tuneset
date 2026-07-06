@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,21 @@ from qqmusic_api import ApiException
 log = get_logger(__name__)
 
 
+def _read_version() -> str:
+    """读取项目根 VERSION 文件作为后端运行时版本。
+    本地: backend/app/main.py → parents[2] = 项目根
+    容器: /app/app/main.py → parents[2] = /，回退到挂载点 /app/VERSION
+    """
+    candidates = [
+        Path(__file__).resolve().parents[2] / "VERSION",
+        Path("/app/VERSION"),
+    ]
+    for p in candidates:
+        if p.exists():
+            return p.read_text().strip()
+    return "0.0.0+unknown"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_logging()
@@ -22,7 +38,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="TuneSet", lifespan=lifespan)
+app = FastAPI(title="TuneSet", version=_read_version(), lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

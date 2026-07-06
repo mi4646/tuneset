@@ -1,4 +1,5 @@
 import axios from "axios";
+import { config } from "./config";
 import type {
   CheckQrResponse,
   ConfirmResponse,
@@ -14,7 +15,7 @@ import type {
   User,
 } from "./types";
 
-const api = axios.create({ baseURL: "/api" });
+const api = axios.create({ baseURL: config.apiBaseUrl });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -41,7 +42,7 @@ let refreshing: Promise<string> | null = null;
 async function doRefresh(): Promise<string> {
   const rt = localStorage.getItem("refresh");
   if (!rt) throw new Error("no refresh token");
-  const r = await axios.post<TokenPair>("/api/auth/refresh", {
+  const r = await axios.post<TokenPair>(`${config.apiBaseUrl}/auth/refresh`, {
     refresh_token: rt,
   });
   setToken(r.data.access_token, r.data.refresh_token);
@@ -105,7 +106,7 @@ export const songlistApi = {
   favorite: () => api.post<SharedSonglistResponse>("/songlist/favorite"),
   subscribeFavorite: () =>
     api.post<SubscribeResponse>("/songlist/favorite/subscribe"),
-  streamUrl: (stream_id: string) => `/api/stream/${stream_id}`,
+  streamUrl: (stream_id: string) => `${config.apiBaseUrl}/stream/${stream_id}`,
 };
 
 export const classifyApi = {

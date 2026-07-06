@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { qqApi } from "../api";
 import { useAuth } from "../hooks/useAuth";
 import Spinner from "../components/Spinner";
+import { config } from "../config";
 
 type QrStatus = "loading" | "waiting" | "scanned" | "success" | "expired" | "error" | "network_error" | "device_limit";
 
@@ -64,7 +65,7 @@ export default function QrLogin() {
           } catch {
             // 单次轮询失败忽略，下轮重试
           }
-        }, 2000);
+        }, config.qrPollInterval);
       } catch {
         if (!stopped) setStatus("error");
       }

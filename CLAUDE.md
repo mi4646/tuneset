@@ -30,6 +30,33 @@
 - **存储分工**：SQLite 存用户账号/邀请码；Redis 存 Celery/LangGraph checkpoint/限流计数
 - **LangGraph checkpoint**：复用 Redis，按 `thread_id` 跨 HTTP 请求维持分类状态
 
+## 版本管理
+
+- **真相源**：根目录 `VERSION` 文件（单行纯文本，如 `0.2.0`）
+- **后端运行时版本**：`backend/app/main.py` 的 `FastAPI(version=_read_version())` 自动读 `VERSION`，暴露在 `/openapi.json` 与 `/docs`
+- **同步范围**（升版本时手动改）：
+  - `VERSION`（真相源）
+  - `backend/pyproject.toml` 的 `version`
+  - `frontend/package.json` 的 `version`
+  - `docker-compose.yml` 各服务 `image:` 标签
+- **判定标准**（SemVer + Conventional Commits）：
+  - `feat` → minor；`fix`/`refactor`/`perf`/`docs` → patch
+  - `BREAKING CHANGE` / `feat!` → major；`chore`/`ci`/`test` → 不升
+- **触发时机**：commit 后由 Claude 判定是否升版本；不升则不动；升则：
+  1. 更新 `VERSION` + 同步 `pyproject.toml` + `package.json` + `docker-compose.yml` 标签
+  2. 在 `docs/CHANGELOG.md` 追加条目（Keep a Changelog 格式）
+  3. 独立 commit `chore(release): vX.Y.Z`
+  4. 打 git tag `vX.Y.Z`
+- **记录文档**：`docs/CHANGELOG.md`
+
+## 配置管理
+
+- **真相源**：根 `.env`（docker + 后端 + 前端共用），`.env.example` 为模板（入库）
+- **后端**：`backend/app/config.py` 用 `pydantic-settings` + `load_dotenv` 显式加载根 `.env`，必要参数均 settings 可配 + 默认值
+- **前端**：`frontend/src/config.ts` 用 `VITE_` 环境变量（vite 构建期注入），必要参数均可配 + 默认值；`vite.config.ts` 的 `envDir: "../"` 指向项目根 `.env`
+- **规则**：新增 settings 性质参数必须走可配 + 默认值，禁止硬编码；vite 仅暴露 `VITE_` 前缀变量给客户端 bundle，后端密钥不会泄露
+- **密钥类强制校验**：`SECRET_KEY` / `AI_API_KEY` / `SUPERADMIN_PASSWORD` 在 `app_env=production` 下拒绝默认/空值，启动即报错
+
 ## 日志规范
 
 后端使用 `loguru`（纯文本人类可读输出 + 文件持久化），前端不强制。
@@ -92,4 +119,5 @@ log.info("event_name", field=value, euin_masked=mask(euin))
 
 - 完整方案决策：`docs/plan.md`
 - QQMusicApi 接口确认：`docs/qqmusic-api-interfaces.md`
+- 变更记录：`docs/CHANGELOG.md`
 - `docs/superpowers/`：本地设计 spec，**本项目入库**（例外于全局 CLAUDE.md 第 5 条；其他项目默认仍过滤）

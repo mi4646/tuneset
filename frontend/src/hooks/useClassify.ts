@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { classifyApi } from "../api";
 import type { ConfirmResult, DragFeedback, ProposalItem } from "../types";
+import { config } from "../config";
 
-const MAX_ITERATIONS = 5;
+const MAX_ITERATIONS = config.classifyMaxIterations;
 
 export function useClassify(threadId: string) {
   const [items, setItems] = useState<ProposalItem[]>([]);

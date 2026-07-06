@@ -1,8 +1,20 @@
+from pathlib import Path
+
+from dotenv import load_dotenv
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# 显式加载根 .env（本地开发用）；容器内由 compose env_file 注入环境变量，
+# 根 .env 不存在时 load_dotenv 静默跳过，不报错
+_ROOT = Path(__file__).resolve().parents[2]  # backend/app/config.py → 项目根
+load_dotenv(_ROOT / ".env", override=False)
+
+# 密钥类配置的无效值黑名单（生产环境拒绝）
+_WEAK_SECRETS = {"", "change-me", "<改>"}
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(extra="ignore")  # 仅读环境变量，不读 env_file
 
     # 应用
     app_env: str = "development"
@@ -58,6 +70,19 @@ class Settings(BaseSettings):
 
     # CORS
     cors_origins: list[str] = ["http://localhost:5173"]
+
+    @model_validator(mode="after")
+    def _validate_production_secrets(self) -> "Settings":
+        """生产环境强制校验密钥类配置，拒绝默认/空值"""
+        if self.app_env != "production":
+            return self
+        if self.secret_key in _WEAK_SECRETS:
+            raise ValueError("生产环境 SECRET_KEY 必须配置为有效值（禁止 change-me/<改>/空）")
+        if self.ai_api_key in _WEAK_SECRETS:
+            raise ValueError("生产环境 AI_API_KEY 必须配置为有效值")
+        if self.superadmin_password in _WEAK_SECRETS:
+            raise ValueError("生产环境 SUPERADMIN_PASSWORD 必须配置为有效值")
+        return self
 
 
 settings = Settings()
