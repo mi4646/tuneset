@@ -81,3 +81,4 @@ log.info("event_name", field=value, euin_masked=mask(euin))
 
 - 完整方案决策：`docs/plan.md`
 - QQMusicApi 接口确认：`docs/qqmusic-api-interfaces.md`
+- `docs/superpowers/`：本地设计 spec，**本项目入库**（例外于全局 CLAUDE.md 第 5 条；其他项目默认仍过滤）

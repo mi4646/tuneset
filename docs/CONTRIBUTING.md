@@ -148,5 +148,5 @@ refactor(frontend): 阶段6 api.ts 响应类型化
 docs: .env.example 加中文注释
 ```
 
-- `docs/superpowers/` 永不提交（本地设计 spec）
-- 阶段任务 review 通过后提交，排除 `docs/superpowers/`
+- `docs/superpowers/` 本项目入库（设计 spec；例外于全局 CLAUDE.md 第 5 条，其他项目默认仍过滤）
+- 阶段任务 review 通过后提交
