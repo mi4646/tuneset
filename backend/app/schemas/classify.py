@@ -17,8 +17,8 @@ class StartRequest(BaseModel):
 class StartResponse(BaseModel):
     thread_id: str
     status: str
-    proposal: list
-    iteration: int
+    proposal: list = []
+    iteration: int = 0
 
 
 class FeedbackRequest(BaseModel):

@@ -4,9 +4,11 @@ start → state → feedback（多轮 HITL）→ confirm（调 QQ API 建歌单�
 方案⑤：QQ 登录态不入 state，confirm 端点接收 credential 才调 QQ API。
 """
 
+import json
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
 from app.auth.deps import get_current_user
@@ -16,6 +18,7 @@ from app.models import User
 from app.qqmusic.client import QQMusicClient
 from app.qqmusic.credential_store import get_valid_credential
 from app.ratelimit.deps import check_classify_interval
+from app.redis_async import async_redis
 from app.schemas.classify import (
     ConfirmRequest,
     FeedbackRequest,
@@ -42,22 +45,17 @@ def start(
         raise HTTPException(status_code=400, detail=f"max {settings.classify_max_songs} songs")
     thread_id = str(uuid.uuid4())
     songs = [s.model_dump() for s in body.songs]
-    res = classify_task.delay(songs, user.id, thread_id).get(timeout=120)
+    classify_task.delay(songs, user.id, thread_id)
     log_audit(
         db,
         user_id=user.id,
         thread_id=thread_id,
         action="classify_start",
-        llm_calls=res.get("llm_calls", []),
-        total_cost=sum(c.get("cost", 0) for c in res.get("llm_calls", [])),
-        status="awaiting_feedback",
+        llm_calls=[],
+        total_cost=0,
+        status="running",
     )
-    return StartResponse(
-        thread_id=thread_id,
-        status=res["status"],
-        proposal=res["proposal"],
-        iteration=res["iteration"],
-    )
+    return StartResponse(thread_id=thread_id, status="running", proposal=[], iteration=0)
 
 
 @router.get("/{thread_id}", response_model=StateResponse)
@@ -74,6 +72,52 @@ def get_state(thread_id: str, user: User = Depends(get_current_user)) -> StateRe
         iteration=v.get("iteration", 0),
         plan=v.get("plan"),
     )
+
+
+@router.get("/{thread_id}/stream")
+async def classify_stream(thread_id: str):
+    """SSE 推送分类进度. 事件类型：classify_progress / classify_ready / classify_failed.
+
+    用 thread_id（uuid4）作凭证，仿 stream.py 的 stream_id 模式——EventSource 不带 JWT，
+    故不走 get_current_user；thread_id 由 start 端点（已鉴权）返回，猜测难度足够。
+    """
+    graph = build_graph()
+    state = graph.get_state({"configurable": {"thread_id": thread_id}})
+    v = state.values if state and state.values else {}
+
+    async def event_generator():
+        status = v.get("status", "running")
+        if status == "awaiting_feedback":
+            yield f"event: classify_ready\ndata: {json.dumps({'status': 'awaiting_feedback', 'proposal': v.get('proposal', []), 'iteration': v.get('iteration', 0)}, ensure_ascii=False)}\n\n"
+            return
+        if status == "failed":
+            yield f"event: classify_failed\ndata: {json.dumps({'status': 'failed', 'error': v.get('error', 'unknown')})}\n\n"
+            return
+        # running：推当前进度
+        total = v.get("total_batches", 0)
+        completed = v.get("completed_batches", 0)
+        if total:
+            yield f"event: classify_progress\ndata: {json.dumps({'completed': completed, 'total': total, 'status': 'running'})}\n\n"
+        # 订阅 pubsub
+        pubsub = async_redis.pubsub()
+        await pubsub.subscribe(f"classify:progress:{thread_id}")
+        try:
+            async for message in pubsub.listen():
+                if message["type"] != "message":
+                    continue
+                raw = json.loads(message["data"])
+                if raw.get("status") == "awaiting_feedback":
+                    yield f"event: classify_ready\ndata: {json.dumps({'status': 'awaiting_feedback', 'proposal': raw.get('proposal', []), 'iteration': raw.get('iteration', 0)}, ensure_ascii=False)}\n\n"
+                    return
+                if raw.get("status") == "failed":
+                    yield f"event: classify_failed\ndata: {json.dumps({'status': 'failed', 'error': raw.get('error', 'unknown')})}\n\n"
+                    return
+                yield f"event: classify_progress\ndata: {message['data']}\n\n"
+        finally:
+            await pubsub.unsubscribe(f"classify:progress:{thread_id}")
+            await pubsub.close()
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @router.post("/{thread_id}/feedback", response_model=StartResponse)

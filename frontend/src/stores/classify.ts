@@ -22,6 +22,10 @@ interface ClassifyState {
   results: ConfirmResult[] | null;
   /** 歌曲名缓存，song_id → name（替代 sessionStorage） */
   songNames: Map<number, string>;
+  /** 分批分类进度（running 期间） */
+  progress: { completed: number; total: number } | null;
+  /** SSE 流错误（classify_failed 事件设置） */
+  streamError: string | null;
 
   /** 服务端 state 写入（load / feedback 返回后调） */
   setFromState: (threadId: string, data: StateResponse) => void;
@@ -33,6 +37,10 @@ interface ClassifyState {
   setResults: (r: ConfirmResult[]) => void;
   /** 启动分类时缓存歌曲名 */
   setSongNames: (songs: SongItem[]) => void;
+  /** 设置分批进度（null 清除） */
+  setProgress: (p: { completed: number; total: number } | null) => void;
+  /** 设置 SSE 流错误（null 清除） */
+  setStreamError: (e: string | null) => void;
   /** 重置（离开工作台） */
   reset: () => void;
 }
@@ -46,6 +54,8 @@ const initial = {
   dragLog: [] as DragFeedback[],
   results: null as ConfirmResult[] | null,
   songNames: new Map<number, string>(),
+  progress: null as { completed: number; total: number } | null,
+  streamError: null as string | null,
 };
 
 export const useClassifyStore = create<ClassifyState>((set) => ({
@@ -82,6 +92,10 @@ export const useClassifyStore = create<ClassifyState>((set) => ({
 
   setSongNames: (songs) =>
     set({ songNames: new Map(songs.map((s) => [s.song_id, s.name])) }),
+
+  setProgress: (p) => set({ progress: p }),
+
+  setStreamError: (e) => set({ streamError: e }),
 
   reset: () => set({ ...initial, songNames: new Map() }),
 }));

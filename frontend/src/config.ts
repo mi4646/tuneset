@@ -4,4 +4,5 @@ export const config = {
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL ?? "/api",
   qrPollInterval: Number(import.meta.env.VITE_QR_POLL_INTERVAL ?? 2000),
   classifyMaxIterations: Number(import.meta.env.VITE_CLASSIFY_MAX_ITERATIONS ?? 5),
+  classifyMaxSongs: Number(import.meta.env.VITE_CLASSIFY_MAX_SONGS ?? 2000),
 } as const;

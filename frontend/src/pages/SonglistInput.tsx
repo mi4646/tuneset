@@ -9,6 +9,7 @@ import {
 import { useClassifyStore } from "@/stores/classify";
 import { errMsg } from "@/lib/error";
 import { songlistApi } from "@/api";
+import { config } from "@/config";
 import type { SongItem } from "@/types";
 import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
@@ -130,6 +131,10 @@ export default function SonglistInput() {
   };
 
   const start = async () => {
+    if (songs.length > config.classifyMaxSongs) {
+      setErr(`超过单次上限 ${config.classifyMaxSongs} 首，请筛选后再分类`);
+      return;
+    }
     setLoading(true);
     setErr("");
     try {

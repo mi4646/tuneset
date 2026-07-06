@@ -125,4 +125,5 @@ export const classifyApi = {
     api.post<{ cancelled: boolean; thread_id: string }>(
       `/classify/${thread_id}/cancel`
     ),
+  streamUrl: (thread_id: string) => `${config.apiBaseUrl}/classify/${thread_id}/stream`,
 };

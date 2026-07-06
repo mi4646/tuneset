@@ -48,10 +48,11 @@ class Settings(BaseSettings):
     log_backup_count: int = 5  # 保留旧日志文件数
 
     # 限流
-    rate_limit_user_daily: int = 30
+    rate_limit_user_daily: int = 10
     rate_limit_ip_hourly: int = 20
     rate_limit_classify_interval: int = 30
-    classify_max_songs: int = 200
+    classify_max_songs: int = 2000
+    classify_batch_size: int = 200
     classify_max_iterations: int = 5
 
     # AI

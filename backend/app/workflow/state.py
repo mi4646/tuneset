@@ -45,6 +45,12 @@ class ClassifyState(TypedDict, total=False):
     songs: list[SongItem]
     user_id: int
     thread_id: str
+    # 分批
+    batches: list[list[SongItem]]
+    batch_index: int
+    batch_proposals: list[list[ProposalItem]]
+    total_batches: int
+    completed_batches: int
     # AI 输出
     proposal: list[ProposalItem]
     # 用户反馈

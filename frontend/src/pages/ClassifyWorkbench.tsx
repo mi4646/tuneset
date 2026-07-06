@@ -15,6 +15,7 @@ import {
   useClassifyFeedback,
   useClassifyConfirm,
   useClassifyCancel,
+  useClassifyStream,
 } from "@/hooks/queries";
 import { useClassifyStore } from "@/stores/classify";
 import { errMsg } from "@/lib/error";
@@ -93,12 +94,23 @@ export default function ClassifyWorkbench() {
   const nav = useNavigate();
   const tid = threadId!;
 
-  const { items, iteration, status, dragLog, results, songNames, moveItem, reset } =
-    useClassifyStore();
+  const {
+    items,
+    iteration,
+    status,
+    dragLog,
+    results,
+    songNames,
+    progress,
+    streamError,
+    moveItem,
+    reset,
+  } = useClassifyStore();
   const { isLoading: loading, error: queryErr } = useClassifyState(tid);
   const feedbackMu = useClassifyFeedback(tid);
   const confirmMu = useClassifyConfirm(tid);
   const cancelMu = useClassifyCancel(tid);
+  useClassifyStream(tid);
   const [feedback, setFeedback] = useState("");
 
   const submitting = feedbackMu.isPending || confirmMu.isPending;
@@ -126,8 +138,7 @@ export default function ClassifyWorkbench() {
   const atMax = iteration >= config.classifyMaxIterations;
   const canConfirm = status === "finalized";
 
-  if (loading && items.length === 0) return <Spinner label="加载中…" />;
-
+  // 结果展示（不变）
   if (results) {
     return (
       <div className="flex justify-center">
@@ -170,6 +181,46 @@ export default function ClassifyWorkbench() {
       </div>
     );
   }
+
+  // SSE 失败：显示错误 + 取消按钮
+  if (streamError) {
+    return (
+      <div className="flex flex-col gap-4 items-start">
+        <p className="text-sm text-destructive">{streamError}</p>
+        <Button
+          variant="outline"
+          onClick={() => {
+            reset();
+            nav("/songlist");
+          }}
+        >
+          取消
+        </Button>
+      </div>
+    );
+  }
+
+  // 分类进行中：分批进度或启动中
+  if (status === "running") {
+    if (progress) {
+      return (
+        <div className="flex justify-center">
+          <Card className="w-full max-w-md">
+            <CardContent className="flex items-center justify-center gap-3">
+              <Spinner />
+              <span className="text-sm">
+                正在分类 {progress.completed}/{progress.total} 批…
+              </span>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+    return <Spinner label="分类启动中…" />;
+  }
+
+  // 初次加载且无 items（非 running 态）
+  if (loading && items.length === 0) return <Spinner label="加载中…" />;
 
   const submitFeedback = async () => {
     try {

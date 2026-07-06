@@ -84,3 +84,20 @@ export interface ConfirmResult {
 export interface ConfirmResponse {
   results: ConfirmResult[];
 }
+
+export interface ClassifyProgressEvent {
+  completed: number;
+  total: number;
+  status: string;
+}
+
+export interface ClassifyReadyEvent {
+  status: string;
+  proposal: ProposalItem[];
+  iteration: number;
+}
+
+export interface ClassifyFailedEvent {
+  status: string;
+  error: string;
+}
