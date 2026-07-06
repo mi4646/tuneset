@@ -111,6 +111,8 @@ npm run dev                                     # vite dev server
 | GET | `/api/auth/me` | 当前用户信息 |
 | POST | `/api/qq/qrcode` | 获取 QQ 登录二维码 |
 | POST | `/api/qq/check` | 检查扫码状态 |
+| GET | `/api/qq/status` | 查询 QQ 绑定状态（方案⑤调整） |
+| POST | `/api/qq/unbind` | 解绑 QQ 登录态（清服务端 credential） |
 | POST | `/api/songlist/favorite` | 取"我喜欢"歌曲（dirid=201，euin 取自 credential） |
 | POST | `/api/songlist/shared` | 取分享歌单歌曲（无需登录态） |
 | POST | `/api/classify/start` | 启动分类任务 |

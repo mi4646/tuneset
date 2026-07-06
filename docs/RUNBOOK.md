@@ -50,7 +50,7 @@ docker compose up -d --build backend
 
 现象：调 `/api/songlist/favorite` 报 400 `credential 缺少 encrypt_uin，请重新扫码登录`。
 
-修复：前端重新扫码登录。QQ 登录态会话级，服务端不存储，过期需重扫（方案⑤，独立于账号 JWT）。
+修复：方案⑤调整后 credential 服务端持久化（SQLite 加密存），`refresh_token` 自动刷新 musickey，通常无需重扫。若 musickey 彻底失效（如设备超限 20279），调 `/api/qq/unbind` 解绑后重新扫码登录。QQ 登录态独立于账号 JWT。
 
 ### AI 限流触发
 

@@ -25,5 +25,5 @@
 
 - **版本一致性的底层保证**：`add_songs` 按 `song_id` 精确添加，不是按歌名模糊匹配。这是绕开 QQ音乐导入版本错配的关键。
 - **song_id vs songmid**：`add_songs` 用 `song_id`（int）+ `song_type`（int），不是 songmid（字符串）。但 `get_fav_song` 返回的歌曲对象两者都有，直接传即可。
-- **euin**：`get_fav_song` 需要 `euin`（加密 UIN），非明文 QQ 号。登录后可拿到，注意转换。euin 属用户隐私，公开服务下勿泄露。
-- **登录态**：`Credential` 对象可序列化，但按方案⑤不持久化存储，会话级前端持有。
+- **euin**：`get_fav_song` 需要 `euin`（加密 UIN），非明文 QQ 号。euin 唯一来源是 `Credential.encrypt_uin`（alias `encryptUin`，登录响应带回）；L-1124 库的 `get_euin`/`get_musicid` 已移除（旧文档示例残留但代码无此方法）。euin 属用户隐私，公开服务下勿泄露。
+- **登录态**：`Credential` 可序列化。方案⑤调整后服务端持久化加密存储（SQLite `users.qq_credential_enc`，Fernet 加密 `secret_key`），`refresh_token` 自动刷新 musickey，跨会话/跨设备共享；解绑走 `/api/qq/unbind`。
