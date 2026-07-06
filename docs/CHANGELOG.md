@@ -4,6 +4,12 @@
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-07-06
+
+### Fixed
+- `.env` 迁移漏改同步：`README.md` / `docs/CONTRIBUTING.md` / `docs/RUNBOOK.md` 中残留的 `backend/.env` 路径修正
+- `docs/CONTRIBUTING.md` 环境变量表补 `VITE_API_BASE_URL` / `VITE_QR_POLL_INTERVAL` / `VITE_CLASSIFY_MAX_ITERATIONS`
+
 ## [0.2.0] - 2026-07-06
 
 ### Added
