@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+## [0.5.6] - 2026-07-06
+
+### Fixed
+- `POST /api/songlist/favorite/subscribe` cache miss 调 QQ 音乐接口偶发 `NetworkError`（超时）直接 502。改为自动重试 1 次（QQ 偶发超时重试大概率成功），重试仍失败才返回 502。新增 `fav_subscribe_retry` 日志事件便于观察重试频率
+
 ## [0.5.5] - 2026-07-06
 
 ### Fixed
