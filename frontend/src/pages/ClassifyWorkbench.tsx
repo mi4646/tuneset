@@ -10,17 +10,22 @@ import {
   useDroppable,
   type DragEndEvent,
 } from "@dnd-kit/core";
-import { useClassify } from "../hooks/useClassify";
-import type { ProposalItem } from "../types";
-import Spinner from "../components/Spinner";
+import {
+  useClassifyState,
+  useClassifyFeedback,
+  useClassifyConfirm,
+  useClassifyCancel,
+} from "@/hooks/queries";
+import { useClassifyStore } from "@/stores/classify";
+import { errMsg } from "@/lib/error";
+import { config } from "@/config";
+import type { ProposalItem } from "@/types";
+import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-function SongCard({
-  item,
-  name,
-}: {
-  item: ProposalItem;
-  name?: string;
-}) {
+function SongCard({ item, name }: { item: ProposalItem; name?: string }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: String(item.song_id),
   });
@@ -31,12 +36,20 @@ function SongCard({
     <div
       ref={setNodeRef}
       style={style}
-      className={`song-card ${isDragging ? "dragging" : ""}`}
+      className={`p-2 bg-background border rounded-md cursor-grab touch-none select-none transition-shadow ${
+        isDragging ? "opacity-60 cursor-grabbing shadow-lg" : ""
+      }`}
       {...attributes}
       {...listeners}
     >
-      <div className="song-card-name">{name || `#${item.song_id}`}</div>
-      {item.reason && <div className="song-card-reason">{item.reason}</div>}
+      <div className="text-sm font-medium truncate">
+        {name || `#${item.song_id}`}
+      </div>
+      {item.reason && (
+        <div className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
+          {item.reason}
+        </div>
+      )}
     </div>
   );
 }
@@ -52,15 +65,24 @@ function Category({
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: category });
   return (
-    <div ref={setNodeRef} className={`category ${isOver ? "over" : ""}`}>
-      <h3>
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col gap-2 rounded-xl border bg-card p-4 transition-colors ${
+        isOver ? "border-primary bg-accent" : ""
+      }`}
+    >
+      <h3 className="font-semibold text-base">
         {category}（{items.length}）
       </h3>
-      <div className="category-body">
+      <div className="flex flex-col gap-2 min-h-12">
         {items.map((it) => (
           <SongCard key={it.song_id} item={it} name={names.get(it.song_id)} />
         ))}
-        {items.length === 0 && <div className="category-empty">拖入歌曲</div>}
+        {items.length === 0 && (
+          <div className="p-3 text-center text-muted-foreground text-sm border border-dashed rounded-md">
+            拖入歌曲
+          </div>
+        )}
       </div>
     </div>
   );
@@ -69,23 +91,19 @@ function Category({
 export default function ClassifyWorkbench() {
   const { threadId } = useParams<{ threadId: string }>();
   const nav = useNavigate();
-  const cls = useClassify(threadId!);
+  const tid = threadId!;
+
+  const { items, iteration, status, dragLog, results, songNames, moveItem, reset } =
+    useClassifyStore();
+  const { isLoading: loading, error: queryErr } = useClassifyState(tid);
+  const feedbackMu = useClassifyFeedback(tid);
+  const confirmMu = useClassifyConfirm(tid);
+  const cancelMu = useClassifyCancel(tid);
   const [feedback, setFeedback] = useState("");
 
-  const names = useMemo(() => {
-    const m = new Map<number, string>();
-    try {
-      const raw = sessionStorage.getItem("classify_songs");
-      if (raw) {
-        (JSON.parse(raw) as { song_id: number; name: string }[]).forEach((s) =>
-          m.set(s.song_id, s.name)
-        );
-      }
-    } catch {
-      // 缓存缺失时降级显示 #song_id
-    }
-    return m;
-  }, []);
+  const submitting = feedbackMu.isPending || confirmMu.isPending;
+  const rawErr = queryErr ?? feedbackMu.error ?? confirmMu.error;
+  const err = rawErr ? errMsg(rawErr) : "";
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -93,105 +111,146 @@ export default function ClassifyWorkbench() {
 
   const groups = useMemo(() => {
     const g: Record<string, ProposalItem[]> = {};
-    cls.items.forEach((it) => {
+    items.forEach((it) => {
       (g[it.category] ||= []).push(it);
     });
     return g;
-  }, [cls.items]);
+  }, [items]);
 
   const onDragEnd = (e: DragEndEvent) => {
     const { active, over } = e;
     if (!over) return;
-    cls.moveItem(Number(active.id), String(over.id));
+    moveItem(Number(active.id), String(over.id));
   };
 
-  if (cls.loading) return <Spinner label="加载中…" />;
+  const atMax = iteration >= config.classifyMaxIterations;
+  const canConfirm = status === "finalized";
 
-  if (cls.results) {
+  if (loading && items.length === 0) return <Spinner label="加载中…" />;
+
+  if (results) {
     return (
-      <div className="page">
-        <div className="results-panel">
-          <h1>建歌单结果</h1>
-          {cls.results.map((r, i) => (
-            <div key={i} className="result-row">
-              <span className="result-cat">{r.category}</span>
-              <span className="result-dirid">歌单 ID: {r.dirid}</span>
-              <span className={`result-added ${r.added ? "ok" : "fail"}`}>
-                {r.added ? "✓ 成功" : "✗ 失败"}
-              </span>
-            </div>
-          ))}
-          <button className="btn" onClick={() => nav("/songlist")}>
-            完成
-          </button>
-        </div>
+      <div className="flex justify-center">
+        <Card className="w-full max-w-xl">
+          <CardHeader>
+            <CardTitle className="text-center">建歌单结果</CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-2">
+            {results.map((r, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between gap-3 p-2 bg-background border rounded-md"
+              >
+                <span className="font-medium">{r.category}</span>
+                <span className="text-muted-foreground text-sm">
+                  歌单 ID: {r.dirid}
+                </span>
+                <span
+                  className={
+                    r.added
+                      ? "text-primary font-medium"
+                      : "text-destructive font-medium"
+                  }
+                >
+                  {r.added ? "✓ 成功" : "✗ 失败"}
+                </span>
+              </div>
+            ))}
+            <Button
+              className="mt-2"
+              onClick={() => {
+                reset();
+                nav("/songlist");
+              }}
+            >
+              完成
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
+  const submitFeedback = async () => {
+    try {
+      await feedbackMu.mutateAsync({
+        feedback_text: feedback,
+        feedback_drag: dragLog,
+      });
+    } catch {
+      // err 由 mutation.error 反映
+    }
+  };
+
+  const confirm = async () => {
+    try {
+      await confirmMu.mutateAsync({});
+    } catch {
+      // err 由 mutation.error 反映
+    }
+  };
+
+  const cancel = async () => {
+    try {
+      await cancelMu.mutateAsync();
+    } catch {
+      // ignore
+    }
+    reset();
+    nav("/songlist");
+  };
+
   return (
-    <div className="page">
-      <div className="workbench-head">
-        <h1>分类工作台</h1>
-        <div className="iter-badge">
-          第 {cls.iteration}/{cls.MAX_ITERATIONS} 轮
-        </div>
+    <div className="flex flex-col gap-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">分类工作台</h1>
+        <span className="inline-flex items-center rounded-full bg-accent text-accent-foreground px-3 py-1 text-sm font-medium">
+          第 {iteration}/{config.classifyMaxIterations} 轮
+        </span>
       </div>
 
-      {cls.err && <div className="error-banner">{cls.err}</div>}
+      {err && <p className="text-sm text-destructive">{err}</p>}
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-        <div className="classify-grid">
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={onDragEnd}
+      >
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4 items-start">
           {Object.entries(groups).map(([cat, items]) => (
-            <Category key={cat} category={cat} items={items} names={names} />
+            <Category key={cat} category={cat} items={items} names={songNames} />
           ))}
         </div>
       </DndContext>
 
-      {cls.dragLog.length > 0 && (
-        <p className="hint">已记录 {cls.dragLog.length} 处拖拽调整</p>
+      {dragLog.length > 0 && (
+        <p className="text-sm text-muted-foreground">
+          已记录 {dragLog.length} 处拖拽调整
+        </p>
       )}
 
-      <div className="feedback-row">
-        <textarea
-          className="input"
-          placeholder="反馈：如把某首歌改到另一类"
-          value={feedback}
-          onChange={(e) => setFeedback(e.target.value)}
-          rows={3}
-        />
-      </div>
+      <Textarea
+        placeholder="反馈：如把某首歌改到另一类"
+        value={feedback}
+        onChange={(e) => setFeedback(e.target.value)}
+        rows={3}
+      />
 
-      <div className="actions">
-        <button
-          className="btn"
-          onClick={() => cls.submitFeedback(feedback)}
-          disabled={cls.submitting || cls.canConfirm}
-        >
-          {cls.atMax ? "生成建歌单计划" : "提交反馈（重新分类）"}
-        </button>
-        <button
-          className="btn"
-          onClick={cls.confirm}
-          disabled={cls.submitting || !cls.canConfirm}
-        >
+      <div className="flex gap-2 flex-wrap">
+        <Button onClick={submitFeedback} disabled={submitting || canConfirm}>
+          {atMax ? "生成建歌单计划" : "提交反馈（重新分类）"}
+        </Button>
+        <Button onClick={confirm} disabled={submitting || !canConfirm}>
           确认建歌单
-        </button>
-        <button
-          className="btn btn-ghost"
-          onClick={() => {
-            cls.cancel();
-            nav("/songlist");
-          }}
-          disabled={cls.submitting}
-        >
+        </Button>
+        <Button variant="outline" onClick={cancel} disabled={submitting}>
           取消
-        </button>
+        </Button>
       </div>
 
-      {!cls.canConfirm && (
-        <p className="hint">
-          {cls.atMax
+      {!canConfirm && (
+        <p className="text-sm text-muted-foreground">
+          {atMax
             ? "已达轮次上限，提交后将生成建歌单计划"
             : "拖拽歌曲调整分类，附文字反馈后提交，AI 将重新分类"}
         </p>

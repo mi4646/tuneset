@@ -1,8 +1,20 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
-import { authApi } from "../api";
-import { useAuth } from "../hooks/useAuth";
-import Spinner from "../components/Spinner";
+import { useLogin } from "@/hooks/queries";
+import { errMsg } from "@/lib/error";
+import { useAuth } from "@/hooks/useAuth";
+import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 export default function Login() {
   const { user, loading, refreshUser } = useAuth();
@@ -10,6 +22,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [err, setErr] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const login = useLogin();
 
   if (loading) return <Spinner label="加载中…" />;
   if (user) return <Navigate to="/songlist" replace />;
@@ -27,47 +40,61 @@ export default function Login() {
     }
     setSubmitting(true);
     try {
-      await authApi.login({ email, password });
+      await login.mutateAsync({ email, password });
       await refreshUser();
     } catch (e: unknown) {
-      const msg = (e as { response?: { data?: { detail?: string } } }).response?.data
-        ?.detail;
-      setErr(msg || "登录失败");
+      setErr(errMsg(e, "登录失败"));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <div className="auth-page">
-      <div className="card">
-        <h1>TuneSet 登录</h1>
-        <form onSubmit={submit} className="form">
-          <input
-            className="input"
-            type="email"
-            placeholder="邮箱"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            autoComplete="email"
-          />
-          <input
-            className="input"
-            type="password"
-            placeholder="密码"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            autoComplete="current-password"
-          />
-          {err && <div className="error-banner">{err}</div>}
-          <button className="btn" type="submit" disabled={submitting}>
-            {submitting ? "登录中…" : "登录"}
-          </button>
+    <div className="min-h-svh flex items-center justify-center p-8">
+      <Card className="w-full max-w-sm">
+        <CardHeader>
+          <CardTitle className="text-2xl">TuneSet 登录</CardTitle>
+          <CardDescription>输入邮箱密码登录账号</CardDescription>
+        </CardHeader>
+        <form onSubmit={submit}>
+          <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="email">邮箱</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="邮箱"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="password">密码</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="密码"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+              />
+            </div>
+            {err && <p className="text-sm text-destructive">{err}</p>}
+          </CardContent>
+          <CardFooter className="flex flex-col gap-4">
+            <Button type="submit" className="w-full" disabled={submitting}>
+              {submitting ? "登录中…" : "登录"}
+            </Button>
+            <p className="text-sm text-center text-muted-foreground">
+              还没账号？
+              <Link to="/register" className="text-primary hover:underline">
+                注册
+              </Link>
+            </p>
+          </CardFooter>
         </form>
-        <p className="form-foot">
-          还没账号？<Link to="/register">注册</Link>
-        </p>
-      </div>
+      </Card>
     </div>
   );
 }

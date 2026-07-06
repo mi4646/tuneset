@@ -1,11 +1,28 @@
 import { useEffect, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { qqApi } from "../api";
-import { useAuth } from "../hooks/useAuth";
-import Spinner from "../components/Spinner";
-import { config } from "../config";
+import { qqApi } from "@/api";
+import { useAuth } from "@/hooks/useAuth";
+import { config } from "@/config";
+import Spinner from "@/components/Spinner";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { toast } from "sonner";
 
-type QrStatus = "loading" | "waiting" | "scanned" | "success" | "expired" | "error" | "network_error" | "device_limit";
+type QrStatus =
+  | "loading"
+  | "waiting"
+  | "scanned"
+  | "success"
+  | "expired"
+  | "error"
+  | "network_error"
+  | "device_limit";
 
 const STATUS_TEXT: Record<QrStatus, string> = {
   loading: "正在获取二维码…",
@@ -44,6 +61,7 @@ export default function QrLogin() {
             if (c.data.done && c.data.bound) {
               if (timer) clearInterval(timer);
               setStatus("success");
+              toast.success("QQ 音乐绑定成功");
               setTimeout(() => {
                 if (!stopped) nav("/songlist");
               }, 800);
@@ -80,54 +98,69 @@ export default function QrLogin() {
 
   if (!user) {
     return (
-      <div className="auth-page">
-        <div className="card qr-card">
-          <h1>QQ 音乐扫码登录</h1>
-          <p className="hint">请先账号登录后再扫码绑定 QQ 音乐。</p>
-          <Link to="/login" className="btn">
-            去登录
-          </Link>
-        </div>
+      <div className="min-h-svh flex items-center justify-center p-8">
+        <Card className="w-full max-w-sm text-center">
+          <CardHeader>
+            <CardTitle>QQ 音乐扫码登录</CardTitle>
+            <CardDescription>请先账号登录后再扫码绑定 QQ 音乐</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link to="/login">去登录</Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   const showImg =
-    img && status !== "expired" && status !== "error" && status !== "loading" && status !== "network_error" && status !== "device_limit";
+    img &&
+    status !== "expired" &&
+    status !== "error" &&
+    status !== "loading" &&
+    status !== "network_error" &&
+    status !== "device_limit";
 
   return (
-    <div className="auth-page">
-      <div className="card qr-card">
-        <h1>QQ 音乐扫码登录</h1>
-        <div className="qr-wrap">
-          {showImg ? (
-            <img
-              src={`data:image/png;base64,${img}`}
-              alt="QQ 音乐二维码"
-              width={200}
-              height={200}
-            />
-          ) : (
-            <div className="qr-placeholder">
-              {status === "expired"
-                ? "已过期"
-                : status === "error"
-                  ? "获取失败"
-                  : status === "network_error"
-                    ? "网络异常"
-                    : status === "device_limit"
-                      ? "设备超限"
-                      : "加载中…"}
-            </div>
+    <div className="min-h-svh flex items-center justify-center p-8">
+      <Card className="w-full max-w-sm text-center">
+        <CardHeader>
+          <CardTitle>QQ 音乐扫码登录</CardTitle>
+          <CardDescription>用 QQ 音乐 APP 扫描下方二维码</CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-4">
+          <div className="flex justify-center">
+            {showImg ? (
+              <img
+                src={`data:image/png;base64,${img}`}
+                alt="QQ 音乐二维码"
+                width={200}
+                height={200}
+                className="rounded-lg border"
+              />
+            ) : (
+              <div className="w-[200px] h-[200px] flex items-center justify-center rounded-lg bg-muted text-muted-foreground text-sm">
+                {status === "expired"
+                  ? "已过期"
+                  : status === "error"
+                    ? "获取失败"
+                    : status === "network_error"
+                      ? "网络异常"
+                      : status === "device_limit"
+                        ? "设备超限"
+                        : "加载中…"}
+              </div>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">{STATUS_TEXT[status]}</p>
+          {(status === "error" ||
+            status === "network_error" ||
+            status === "device_limit") && (
+            <Button onClick={() => setQrKey((k) => k + 1)}>重新获取</Button>
           )}
-        </div>
-        <p className="qr-status">{STATUS_TEXT[status]}</p>
-        {(status === "error" || status === "network_error" || status === "device_limit") && (
-          <button className="btn" onClick={() => setQrKey((k) => k + 1)}>
-            重新获取
-          </button>
-        )}
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
