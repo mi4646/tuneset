@@ -36,12 +36,26 @@ def _migrate_users_is_superuser() -> None:
             conn.execute(text("ALTER TABLE users ADD COLUMN is_superuser BOOLEAN DEFAULT 0"))
 
 
+def _migrate_users_qq_fields() -> None:
+    """开发期轻量迁移：users 表补 QQ 绑定字段（方案⑤调整）。"""
+    inspector = inspect(engine)
+    if "users" not in inspector.get_table_names():
+        return
+    columns = {c["name"] for c in inspector.get_columns("users")}
+    with engine.begin() as conn:
+        if "qq_credential_enc" not in columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN qq_credential_enc TEXT"))
+        if "qq_euin_masked" not in columns:
+            conn.execute(text("ALTER TABLE users ADD COLUMN qq_euin_masked VARCHAR(64)"))
+
+
 def init_db() -> None:
     """建表。开发期用 create_all；生产迁移后续引入 alembic。"""
     from app.models import AuditLog, InviteCode, User  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     _migrate_users_is_superuser()
+    _migrate_users_qq_fields()
 
 
 def ensure_superadmin() -> None:

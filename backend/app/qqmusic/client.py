@@ -35,6 +35,10 @@ class QQMusicClient:
     async def check_qrcode(self, qrcode: QR) -> QRLoginResult:
         return await self._client.login.check_qrcode(qrcode)
 
+    async def refresh_credential(self, credential: Credential) -> Credential:
+        """用 refresh_token 刷新 musickey，避免重复扫码（方案⑤调整）。"""
+        return await self._client.login.refresh_credential(credential)
+
     # ---- 歌曲信息（分类依据：详情 + 标签，缺标签补歌词）----
     async def get_song_detail(self, value: int | str):
         return await self._client.song.get_detail(value)
