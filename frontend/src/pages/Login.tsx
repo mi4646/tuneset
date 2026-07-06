@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, Navigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useLogin } from "@/hooks/queries";
 import { errMsg } from "@/lib/error";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,7 +21,8 @@ export default function Login() {
   const { user, loading, refreshUser } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [err, setErr] = useState("");
+  const [emailErr, setEmailErr] = useState("");
+  const [passwordErr, setPasswordErr] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const login = useLogin();
 
@@ -29,13 +31,14 @@ export default function Login() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErr("");
+    setEmailErr("");
+    setPasswordErr("");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setErr("请输入有效邮箱");
+      setEmailErr("请输入有效邮箱");
       return;
     }
     if (password.length < 8) {
-      setErr("密码至少 8 位");
+      setPasswordErr("密码至少 8 位");
       return;
     }
     setSubmitting(true);
@@ -43,7 +46,7 @@ export default function Login() {
       await login.mutateAsync({ email, password });
       await refreshUser();
     } catch (e: unknown) {
-      setErr(errMsg(e, "登录失败"));
+      toast.error(errMsg(e, "登录失败"));
     } finally {
       setSubmitting(false);
     }
@@ -68,6 +71,11 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
               />
+              {emailErr && (
+                <p role="alert" className="text-sm text-destructive mt-1">
+                  {emailErr}
+                </p>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="password">密码</Label>
@@ -79,8 +87,12 @@ export default function Login() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
               />
+              {passwordErr && (
+                <p role="alert" className="text-sm text-destructive mt-1">
+                  {passwordErr}
+                </p>
+              )}
             </div>
-            {err && <p className="text-sm text-destructive">{err}</p>}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={submitting}>

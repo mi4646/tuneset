@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { toast } from "sonner";
 import {
   useQqStatus,
   useSubscribeFavorite,
@@ -36,7 +37,6 @@ const parseSongItems = (songs: Record<string, unknown>[]): SongItem[] =>
 export default function SonglistInput() {
   const [link, setLink] = useState("");
   const [songs, setSongs] = useState<SongItem[]>([]);
-  const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [pushInterval, setPushInterval] = useState(300);
@@ -61,7 +61,6 @@ export default function SonglistInput() {
   // 订阅"我喜欢"实时推送：subscribe 拿 stream_id + 首批数据，EventSource 接收后续更新
   const subscribeFav = async () => {
     setLoading(true);
-    setErr("");
     try {
       if (evtRef.current) {
         evtRef.current.close();
@@ -78,7 +77,7 @@ export default function SonglistInput() {
         try {
           const data = JSON.parse(e.data);
           if (data.error) {
-            setErr(`推送失败：${data.error}`);
+            toast.error(`推送失败：${data.error}`);
             return;
           }
           if (data.songs) {
@@ -92,11 +91,11 @@ export default function SonglistInput() {
         es.close();
         evtRef.current = null;
         setStreaming(false);
-        setErr("实时推送已断开，点刷新重试");
+        toast.error("实时推送已断开，点刷新重试");
       };
       evtRef.current = es;
     } catch (e: unknown) {
-      setErr(errMsg(e, "加载失败"));
+      toast.error(errMsg(e, "加载失败"));
     } finally {
       setLoading(false);
     }
@@ -116,7 +115,6 @@ export default function SonglistInput() {
 
   const load = async () => {
     setLoading(true);
-    setErr("");
     try {
       const id = parseSonglistId(link);
       if (!id) throw new Error("无法解析歌单 ID");
@@ -124,7 +122,7 @@ export default function SonglistInput() {
       setSongs(parseSongItems(r.data?.songs || []));
       setLoaded(true);
     } catch (e: unknown) {
-      setErr(errMsg(e, "加载失败"));
+      toast.error(errMsg(e, "加载失败"));
     } finally {
       setLoading(false);
     }
@@ -132,17 +130,16 @@ export default function SonglistInput() {
 
   const start = async () => {
     if (songs.length > config.classifyMaxSongs) {
-      setErr(`超过单次上限 ${config.classifyMaxSongs} 首，请筛选后再分类`);
+      toast.error(`超过单次上限 ${config.classifyMaxSongs} 首，请筛选后再分类`);
       return;
     }
     setLoading(true);
-    setErr("");
     try {
       setSongNames(songs);
       const r = await startMu.mutateAsync(songs);
       nav(`/classify/${r.data.thread_id}`);
     } catch (e: unknown) {
-      setErr(errMsg(e, "启动分类失败"));
+      toast.error(errMsg(e, "启动分类失败"));
     } finally {
       setLoading(false);
     }
@@ -195,7 +192,6 @@ export default function SonglistInput() {
       </div>
 
       {loading && songs.length === 0 && <Spinner label="加载中…" />}
-      {err && <p className="text-sm text-destructive">{err}</p>}
       {loaded && songs.length === 0 && !loading && (
         <p className="text-muted-foreground text-center p-4">该歌单没有歌曲</p>
       )}

@@ -1,5 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import {
   DndContext,
   PointerSensor,
@@ -25,6 +26,14 @@ import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 function SongCard({ item, name }: { item: ProposalItem; name?: string }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -115,7 +124,11 @@ export default function ClassifyWorkbench() {
 
   const submitting = feedbackMu.isPending || confirmMu.isPending;
   const rawErr = queryErr ?? feedbackMu.error ?? confirmMu.error;
-  const err = rawErr ? errMsg(rawErr) : "";
+
+  // query/mutation 错误 → toast（依赖 rawErr，仅在变化时触发）
+  useEffect(() => {
+    if (rawErr) toast.error(errMsg(rawErr));
+  }, [rawErr]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -182,21 +195,35 @@ export default function ClassifyWorkbench() {
     );
   }
 
-  // SSE 失败：显示错误 + 取消按钮
+  // SSE 失败：dialog 提示
   if (streamError) {
     return (
-      <div className="flex flex-col gap-4 items-start">
-        <p className="text-sm text-destructive">{streamError}</p>
-        <Button
-          variant="outline"
-          onClick={() => {
+      <Dialog
+        open
+        onOpenChange={(o) => {
+          if (!o) {
             reset();
             nav("/songlist");
-          }}
-        >
-          取消
-        </Button>
-      </div>
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>分类失败</DialogTitle>
+            <DialogDescription>{streamError}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                reset();
+                nav("/songlist");
+              }}
+            >
+              返回重选
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     );
   }
 
@@ -259,8 +286,6 @@ export default function ClassifyWorkbench() {
           第 {iteration}/{config.classifyMaxIterations} 轮
         </span>
       </div>
-
-      {err && <p className="text-sm text-destructive">{err}</p>}
 
       <DndContext
         sensors={sensors}

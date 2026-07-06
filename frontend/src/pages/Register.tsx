@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link, Navigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useRegister } from "@/hooks/queries";
 import { errMsg } from "@/lib/error";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,7 +22,8 @@ export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [invite, setInvite] = useState("");
-  const [err, setErr] = useState("");
+  const [emailErr, setEmailErr] = useState("");
+  const [passwordErr, setPasswordErr] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const register = useRegister();
   const nav = useNavigate();
@@ -31,13 +33,14 @@ export default function Register() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErr("");
+    setEmailErr("");
+    setPasswordErr("");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setErr("请输入有效邮箱");
+      setEmailErr("请输入有效邮箱");
       return;
     }
     if (password.length < 8 || password.length > 64) {
-      setErr("密码长度需 8-64");
+      setPasswordErr("密码长度需 8-64");
       return;
     }
     setSubmitting(true);
@@ -49,7 +52,7 @@ export default function Register() {
       });
       nav("/login");
     } catch (e: unknown) {
-      setErr(errMsg(e, "注册失败"));
+      toast.error(errMsg(e, "注册失败"));
     } finally {
       setSubmitting(false);
     }
@@ -74,6 +77,11 @@ export default function Register() {
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"
               />
+              {emailErr && (
+                <p role="alert" className="text-sm text-destructive mt-1">
+                  {emailErr}
+                </p>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="password">密码</Label>
@@ -85,6 +93,11 @@ export default function Register() {
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
               />
+              {passwordErr && (
+                <p role="alert" className="text-sm text-destructive mt-1">
+                  {passwordErr}
+                </p>
+              )}
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="invite">邀请码（可选）</Label>
@@ -95,7 +108,6 @@ export default function Register() {
                 onChange={(e) => setInvite(e.target.value)}
               />
             </div>
-            {err && <p className="text-sm text-destructive">{err}</p>}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full" disabled={submitting}>
