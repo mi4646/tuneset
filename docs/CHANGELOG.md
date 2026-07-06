@@ -4,6 +4,22 @@
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-07-06
+
+### Added
+- 分批分类：songs 超 `classify_batch_size`（默认 200）时按顺序切批，各批独立 AI 分类 → `merge` 节点归一化同义类名 → 统一一轮 HITL；分类总上限 `classify_max_songs` 200→2000，支持全量歌曲
+- LangGraph 新增 `split` / `batch_propose` / `merge` 节点 + `route_after_batch` 条件边（单批跳过 merge 省 AI 调用）
+- merge 提示词 `build_merge_prompt`（归一化同义类名）；refine 提示词 `build_refine_prompt`（追加用户反馈 + 当前合并提案）
+- `GET /api/classify/{thread_id}/stream` SSE 端点：推送 `classify_progress` / `classify_ready` / `classify_failed`，仿 stream.py 用 thread_id 作凭证（EventSource 不带 JWT）
+- 前端 `useClassifyStream` hook + 分批进度 UI（"正在分类 N/M 批…"）+ 超量拦截（songs > 2000 提示筛选）
+
+### Changed
+- `POST /api/classify/start` 改异步：立即返回 `status:"running"` + 空 proposal，不再 `.get(timeout=120)` 同步等；Celery task 内跑完整流程并回写 `classify_propose_done` 审计
+- `ClassifyState` 新增 `batches` / `batch_index` / `batch_proposals` / `total_batches` / `completed_batches` 字段
+- 删除老 `propose_node`，统一 `batch_propose`（单批时 `total_batches==1` 直接写 proposal，跳过 merge）
+- `rate_limit_user_daily` 默认 30→10（分批成本上调）；`classify_max_songs` 默认 200→2000；新增 `classify_batch_size`（默认 200）
+- `StartResponse.proposal` / `iteration` 改默认值（适配异步 start 返回空 proposal）
+
 ## [0.4.0] - 2026-07-06
 
 ### Changed
