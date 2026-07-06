@@ -4,6 +4,23 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-06
+
+### Changed
+- 前端 UI 重构：引入 shadcn/ui（new-york/slate）+ Tailwind CSS v4，主色由紫改青绿 Teal `#0D9488`
+- 前端状态管理重构：TanStack Query（服务端态）+ Zustand（客户端态），替代散落 useState 与 `sessionStorage["classify_songs"]` 耦合
+- Login / Register / QrLogin / SonglistInput / ClassifyWorkbench 全部用 shadcn Card / Button / Input / Textarea 重写
+- Spinner / ErrorBoundary / AppLayout / AuthProvider 改用 shadcn + Tailwind
+- 移除旧手写 CSS（约 660 行），统一 shadcn 主题变量 + 暗色模式变量预留
+
+### Added
+- 前端 `src/lib/`（`cn` / `errMsg` / `createQueryClient` 工具）、`src/stores/classify.ts`（Zustand store）、`src/hooks/queries.ts`（11 个 Query hooks）
+- shadcn/ui 组件（button / card / input / label / textarea / sonner）
+- `errMsg` 工具提取 axios detail，替代重复模板代码
+
+### Removed
+- `src/hooks/useClassify.ts`（被 store + Query hooks 取代）
+
 ## [0.3.0] - 2026-07-06
 
 ### Changed
