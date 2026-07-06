@@ -46,7 +46,12 @@ async def subscribe_favorite(
         # 首次：若无缓存，同步调 QQ 填充；有缓存直接返回
         cache_raw = await async_redis.get(f"fav:cache:{euin}")
         if cache_raw is None:
-            songs, total = await fetch_fav_songs(cred)
+            try:
+                songs, total = await fetch_fav_songs(cred)
+            except NetworkError:
+                # QQ 接口偶发超时，重试 1 次（重试仍失败则由外层 except 返回 502）
+                log.warning("fav_subscribe_retry", encrypt_uin_masked=mask(euin), reason="首次超时,重试 1 次")
+                songs, total = await fetch_fav_songs(cred)
             cache_data = json.dumps({"songs": songs, "total": total})
             await async_redis.setex(f"fav:cache:{euin}", ttl, cache_data)
             log.info("fav_subscribe_init", encrypt_uin_masked=mask(euin), total=total)
