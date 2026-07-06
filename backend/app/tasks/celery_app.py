@@ -2,9 +2,17 @@
 
 from datetime import timedelta
 
-from celery import Celery
+from celery import Celery, signals
 
 from app.config import settings
+from app.logging import setup_logging
+
+
+@signals.setup_logging.connect
+def _setup_loguru_logging(**kwargs: object) -> None:
+    """celery 启动时接管 logging 配置，转 loguru（覆盖 worker/beat 进程）."""
+    setup_logging()
+
 
 celery = Celery(
     "tuneset",

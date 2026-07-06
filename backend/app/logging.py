@@ -62,20 +62,29 @@ def _health_check_filter(record: dict) -> bool:
     return True
 
 
-def setup_logging() -> None:
-    """初始化 loguru. 在 FastAPI lifespan 启动时调用一次.
+_initialized = False
 
+
+def setup_logging() -> None:
+    """初始化 loguru. 幂等，多次调用仅首次生效.
+
+    在应用入口（backend: main.py import 时；worker/beat: celery setup_logging 信号）调用.
     双输出：stdout（docker logs）+ 文件（持久化，rotation，多进程安全 via enqueue）.
-    纯文本格式，人类可读. 标准 logging（uvicorn 等）通过 InterceptHandler 转发到 loguru.
+    纯文本格式，人类可读. 标准 logging（uvicorn/celery 等）通过 InterceptHandler 转发到 loguru.
     """
+    global _initialized
+    if _initialized:
+        return
+    _initialized = True
     logger.remove()
     logger.configure(patcher=_text_patcher)
-    # intercept uvicorn 标准 logging 到 loguru
-    # 不拦截 root logger（logging.basicConfig force=True），避免影响第三方库（qqmusic_api/httpx 等）
-    for name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+    # intercept uvicorn/celery 标准 logging 到 loguru
+    # 不拦截 root logger，避免影响第三方库（qqmusic_api/httpx 等）
+    for name in ("uvicorn", "uvicorn.access", "uvicorn.error", "celery", "celery.task"):
         lg = logging.getLogger(name)
         lg.handlers = [InterceptHandler()]
         lg.propagate = False
+        lg.setLevel(logging.DEBUG)  # 不在标准 logging 层过滤，交由 loguru sink level 控制
     # stdout（docker logs 仍可用）
     logger.add(
         sys.stdout,

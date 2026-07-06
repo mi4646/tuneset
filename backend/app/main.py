@@ -12,6 +12,7 @@ from app.logging import get_logger, setup_logging
 from app.ratelimit.middleware import IPRateLimitMiddleware
 from qqmusic_api import ApiException
 
+setup_logging()
 log = get_logger(__name__)
 
 
@@ -32,7 +33,6 @@ def _read_version() -> str:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    setup_logging()
     init_db()
     ensure_superadmin()
     yield
