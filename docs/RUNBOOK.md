@@ -6,7 +6,7 @@
 
 ```bash
 git clone <repo> /var/www/tuneset && cd /var/www/tuneset
-cp backend/.env.example backend/.env
+cp .env.example .env
 # 编辑 .env：至少改 SECRET_KEY / AI_API_KEY / SUPERADMIN_PASSWORD
 docker compose up -d --build
 ```
@@ -70,7 +70,7 @@ docker compose up -d --build backend
 
 ### 超管密码修改
 
-改 `backend/.env` 的 `SUPERADMIN_PASSWORD`，重启后端生效（启动时 `ensure_superadmin` 检测哈希变更并更新）。
+改 `.env` 的 `SUPERADMIN_PASSWORD`，重启后端生效（启动时 `ensure_superadmin` 检测哈希变更并更新）。
 
 ```bash
 docker compose restart backend

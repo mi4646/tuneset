@@ -65,7 +65,7 @@ npm run dev                                     # vite dev server
 
 ## 环境变量
 
-真相源：`backend/.env.example`（每个变量均有中文注释）。下表为概览，默认值以 `.env.example` 为准。
+真相源：`.env.example`（每个变量均有中文注释）。下表为概览，默认值以 `.env.example` 为准。
 
 <!-- AUTO-GENERATED:env -->
 | 变量 | 必需 | 说明 |
@@ -95,6 +95,9 @@ npm run dev                                     # vite dev server
 | `CELERY_RESULT_BACKEND` | 是 | Celery result backend（结果存储） |
 | `LANGSMITH_TRACING` | 否 | 是否启用 LangSmith 追踪 |
 | `LANGSMITH_API_KEY` | 否 | LangSmith API 密钥 |
+| `VITE_API_BASE_URL` | 否 | 前端 API 基址（nginx 反代下用 `/api`） |
+| `VITE_QR_POLL_INTERVAL` | 否 | 扫码状态轮询间隔（毫秒，默认 2000） |
+| `VITE_CLASSIFY_MAX_ITERATIONS` | 否 | 分类最大轮次（应与 `CLASSIFY_MAX_ITERATIONS` 对齐） |
 <!-- /AUTO-GENERATED:env -->
 
 ## API 端点参考
