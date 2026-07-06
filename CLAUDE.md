@@ -21,7 +21,7 @@
 ## 关键约束
 
 - **用户系统**：邀请码注册 + 可配公开注册开关；邮箱+密码登录，JWT 鉴权
-- **QQ登录态**：前端持有为主，后端 SSE 推送时按 euin 临时缓存 credential（Redis，TTL=推送间隔×2，连接断开清理），过期重扫（方案⑤，独立于账号 JWT）
+- **QQ登录态**：服务端持久化加密 credential（SQLite `users.qq_credential_enc`，Fernet 加密 `secret_key`），跨会话/跨设备共享；`refresh_token` 自动刷新 musickey，避免频繁扫码导致 20279 设备超限；SSE 推送仍按 euin 临时缓存（Redis，TTL=推送间隔×2，连接断开清理）；解绑走 `/api/qq/unbind`（方案⑤调整，独立于账号 JWT）
 - **AI 成本**：开发者承担，所有用户共用 → 必须强限流（用户级 + IP/频率/单次/轮次上限）
 - **分类模式 C（多轮 HITL）**：AI 提议 → 用户拖拽+对话反馈 → AI 带上下文重分类，**最多 5 轮** → 确认落库
 - **反馈形式**：拖拽（dnd-kit）+ 对话文本输入结合
