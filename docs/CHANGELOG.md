@@ -4,6 +4,15 @@
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-07-06
+
+### Changed
+- `CLAUDE.md` 新增「开发流程」章节：功能完成后自审 + 问题上报机制
+- `.gitignore` 合并至根目录（删 `frontend/.gitignore`，规则统一）
+
+### Removed
+- `frontend/.gitignore`（内容并入根 `.gitignore`）
+
 ## [0.2.1] - 2026-07-06
 
 ### Fixed
