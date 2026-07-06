@@ -50,7 +50,7 @@ export default function QrLogin() {
               const ev = c.data.event as string;
               if (ev === "expired") {
                 if (timer) clearInterval(timer);
-                setStatus("expired");
+                setQrKey((k) => k + 1); // 过期自动刷新
               } else if (ev === "scanned") {
                 setStatus("scanned");
               } else if (ev === "NETWORK_ERROR") {
@@ -121,7 +121,7 @@ export default function QrLogin() {
           )}
         </div>
         <p className="qr-status">{STATUS_TEXT[status]}</p>
-        {(status === "expired" || status === "error" || status === "network_error" || status === "device_limit") && (
+        {(status === "error" || status === "network_error" || status === "device_limit") && (
           <button className="btn" onClick={() => setQrKey((k) => k + 1)}>
             重新获取
           </button>
