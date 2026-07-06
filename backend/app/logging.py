@@ -60,8 +60,8 @@ def setup_logging() -> None:
     """
     logger.remove()
     logger.configure(patcher=_json_patcher)
-    # intercept 标准 logging 到 loguru
-    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+    # intercept uvicorn 标准 logging 到 loguru
+    # 不拦截 root logger（logging.basicConfig force=True），避免影响第三方库（qqmusic_api/httpx 等）
     for name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
         lg = logging.getLogger(name)
         lg.handlers = [InterceptHandler()]
