@@ -2,6 +2,7 @@ import base64
 import pickle
 
 from fastapi import APIRouter, HTTPException
+from qqmusic_api import ApiException
 from qqmusic_api.core.exceptions import NetworkError
 
 from app.logging import get_logger, mask
@@ -40,6 +41,12 @@ async def check_qrcode(body: CheckQrRequest) -> CheckQrResponse:
     except NetworkError as e:
         log.warning("qq_check_network_error", error=str(e))
         return CheckQrResponse(done=False, event="NETWORK_ERROR")
+    except ApiException as e:
+        code = getattr(e, "code", -1)
+        log.warning("qq_check_api_error", error=str(e), code=code)
+        if code == 20279:
+            return CheckQrResponse(done=False, event="DEVICE_LIMIT")
+        return CheckQrResponse(done=False, event="QQ_API_ERROR")
     event_name = result.event.name if hasattr(result.event, "name") else str(result.event)
     resp = CheckQrResponse(done=result.done, event=event_name)
     if result.done and result.credential is not None:

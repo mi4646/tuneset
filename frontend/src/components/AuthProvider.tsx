@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { authApi, clearToken, isLoggedIn } from "../api";
+import { authApi, clearCredential, clearToken, isLoggedIn } from "../api";
 import { AuthCtx, type User } from "../hooks/useAuth";
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     clearToken();
+    clearCredential();
     setUser(null);
     location.assign("/login");
   };

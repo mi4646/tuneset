@@ -44,6 +44,10 @@ export function setCredential(cred: Record<string, unknown>) {
   sessionStorage.setItem("qq_credential", JSON.stringify(cred));
 }
 
+export function clearCredential() {
+  sessionStorage.removeItem("qq_credential");
+}
+
 let refreshing: Promise<string> | null = null;
 
 async function doRefresh(): Promise<string> {

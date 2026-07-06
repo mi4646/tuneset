@@ -4,7 +4,7 @@ import { qqApi, setCredential } from "../api";
 import { useAuth } from "../hooks/useAuth";
 import Spinner from "../components/Spinner";
 
-type QrStatus = "loading" | "waiting" | "scanned" | "success" | "expired" | "error" | "network_error";
+type QrStatus = "loading" | "waiting" | "scanned" | "success" | "expired" | "error" | "network_error" | "device_limit";
 
 const STATUS_TEXT: Record<QrStatus, string> = {
   loading: "正在获取二维码…",
@@ -14,6 +14,7 @@ const STATUS_TEXT: Record<QrStatus, string> = {
   expired: "二维码已过期",
   error: "获取二维码失败",
   network_error: "网络异常，请重新扫码",
+  device_limit: "登录设备超限，请在 QQ 音乐 APP 退出其他设备后重新扫码",
 };
 
 export default function QrLogin() {
@@ -56,6 +57,9 @@ export default function QrLogin() {
               } else if (ev === "NETWORK_ERROR") {
                 if (timer) clearInterval(timer);
                 setStatus("network_error");
+              } else if (ev === "DEVICE_LIMIT") {
+                if (timer) clearInterval(timer);
+                setStatus("device_limit");
               }
             }
           } catch {
@@ -89,7 +93,7 @@ export default function QrLogin() {
   }
 
   const showImg =
-    img && status !== "expired" && status !== "error" && status !== "loading" && status !== "network_error";
+    img && status !== "expired" && status !== "error" && status !== "loading" && status !== "network_error" && status !== "device_limit";
 
   return (
     <div className="auth-page">
@@ -111,12 +115,14 @@ export default function QrLogin() {
                   ? "获取失败"
                   : status === "network_error"
                     ? "网络异常"
-                    : "加载中…"}
+                    : status === "device_limit"
+                      ? "设备超限"
+                      : "加载中…"}
             </div>
           )}
         </div>
         <p className="qr-status">{STATUS_TEXT[status]}</p>
-        {(status === "expired" || status === "error" || status === "network_error") && (
+        {(status === "expired" || status === "error" || status === "network_error" || status === "device_limit") && (
           <button className="btn" onClick={() => setQrKey((k) => k + 1)}>
             重新获取
           </button>

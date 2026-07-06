@@ -7,9 +7,11 @@ from fastapi.responses import JSONResponse
 from app.api import auth, classify, health, qq, songlist, stream
 from app.config import settings
 from app.db.base import ensure_superadmin, init_db
-from app.logging import setup_logging
+from app.logging import get_logger, setup_logging
 from app.ratelimit.middleware import IPRateLimitMiddleware
 from qqmusic_api import ApiException
+
+log = get_logger(__name__)
 
 
 @asynccontextmanager
@@ -40,4 +42,10 @@ app.include_router(stream.router, prefix="/api")
 
 @app.exception_handler(ApiException)
 async def qq_api_exception_handler(request: Request, exc: ApiException) -> JSONResponse:
+    log.warning(
+        "qq_api_exception",
+        path=request.url.path,
+        error=str(exc),
+        code=getattr(exc, "code", -1),
+    )
     return JSONResponse(status_code=400, content={"detail": f"QQ API error: {exc}"})
