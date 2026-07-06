@@ -13,7 +13,13 @@ class CheckQrRequest(BaseModel):
 class CheckQrResponse(BaseModel):
     done: bool
     event: str | None = None
-    credential: dict | None = None
+    credential: dict | None = None  # 兼容前端旧逻辑，阶段 4 移除
+    bound: bool = False
+
+
+class QqStatusResponse(BaseModel):
+    bound: bool
+    euin_masked: str | None = None
 
 
 class FavSongRequest(BaseModel):
