@@ -4,6 +4,17 @@
 
 ## [Unreleased]
 
+## [0.5.5] - 2026-07-06
+
+### Fixed
+- `POST /api/songlist/favorite/subscribe` 调 QQ 音乐 `u.y.qq.com` 偶发读超时（实测首次冷启动 ~5.1s）抛 `NetworkError` 直接冒泡 500。改为捕获返回 502 + 中文提示"QQ音乐接口暂时不可用，请稍后重试"
+
+### Security
+- loguru `logger.add()` 默认 `diagnose=True` 会把异常 traceback 的局部变量渲染进日志，导致 `Credential`（openid/refresh_token/access_token）明文落地 `logs/app.log`。两个 `logger.add()` 加 `diagnose=False`，traceback 调用栈仍保留但不再泄露局部变量
+
+### Changed
+- `QQMusicClient` 的 niquests timeout 从 `(5, 10)` 调到 `(5, 30)`：connect=5s 不通快速失败，read=30s 容忍 QQ 音乐偶发慢接口
+
 ## [0.5.4] - 2026-07-06
 
 ### Changed
