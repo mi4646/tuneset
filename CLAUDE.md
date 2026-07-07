@@ -61,7 +61,7 @@
   - 全是 `fix`/`refactor`/`perf`/`docs` → patch
 - **发版动作**：
   1. 判定版本号，更新 `VERSION` + 同步 `pyproject.toml` + `package.json` + `docker-compose.yml` 标签
-  2. 在 `CHANGELOG.md`（根目录）顶部标题下追加 `### vX.Y.Z` + 有序列表（每条一行，面向用户的大白话摘要，从 git log 提炼）
+  2. 在 `CHANGELOG.md`（根目录）底部追加 `### vX.Y.Z` + 有序列表（每条一行，面向用户的大白话摘要，从 git log 提炼）
   3. 独立 commit `chore(release): vX.Y.Z`
   4. 打 git tag `vX.Y.Z`
 - **记录文档**：`CHANGELOG.md`（根目录，用户向精简格式：`### vX.Y.Z` + 有序列表）
