@@ -5,6 +5,7 @@ import { useLogin } from "@/hooks/queries";
 import { errMsg } from "@/lib/error";
 import { useAuth } from "@/hooks/useAuth";
 import Spinner from "@/components/Spinner";
+import AuthShell from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -53,10 +54,10 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-svh flex items-center justify-center p-8">
+    <AuthShell>
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">TuneSet 登录</CardTitle>
+          <CardTitle className="text-2xl">登录</CardTitle>
           <CardDescription>输入邮箱密码登录账号</CardDescription>
         </CardHeader>
         <form onSubmit={submit}>
@@ -107,6 +108,6 @@ export default function Login() {
           </CardFooter>
         </form>
       </Card>
-    </div>
+    </AuthShell>
   );
 }

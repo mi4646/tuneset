@@ -4,6 +4,7 @@ import { qqApi } from "@/api";
 import { useAuth } from "@/hooks/useAuth";
 import { config } from "@/config";
 import Spinner from "@/components/Spinner";
+import AuthShell from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -98,7 +99,7 @@ export default function QrLogin() {
 
   if (!user) {
     return (
-      <div className="min-h-svh flex items-center justify-center p-8">
+      <AuthShell>
         <Card className="w-full max-w-sm text-center">
           <CardHeader>
             <CardTitle>QQ 音乐扫码登录</CardTitle>
@@ -110,7 +111,7 @@ export default function QrLogin() {
             </Button>
           </CardContent>
         </Card>
-      </div>
+      </AuthShell>
     );
   }
 
@@ -123,7 +124,7 @@ export default function QrLogin() {
     status !== "device_limit";
 
   return (
-    <div className="min-h-svh flex items-center justify-center p-8">
+    <AuthShell>
       <Card className="w-full max-w-sm text-center">
         <CardHeader>
           <CardTitle>QQ 音乐扫码登录</CardTitle>
@@ -161,6 +162,6 @@ export default function QrLogin() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </AuthShell>
   );
 }
