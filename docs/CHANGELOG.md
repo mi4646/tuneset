@@ -4,6 +4,20 @@
 
 ## [Unreleased]
 
+## [0.5.8] - 2026-07-07
+
+### Changed
+- 前端 UI 重构（样式 / 交互呈现 / 品牌化）：
+  - 启用 next-themes 主题切换（AppLayout 顶栏 Sun/Moon 按钮，默认跟随系统 + localStorage 记忆）。暗色主题 CSS 变量此前已就绪但 next-themes 未挂载，现启用
+  - 新增 `BrandMark` / `AuthShell` 品牌基础组件；AppLayout 顶栏 logo 与 Auth 三页（Login / Register / QrLogin）统一品牌头（ListMusic 图标 + 价值主张「AI 帮你整理 QQ 音乐歌单」）
+  - SonglistInput 落地页重构：hero 区（标题「整理你的歌单」+ 价值主张）取代裸 h1；状态化主体（未绑 QQ 引导卡 / 加载骨架卡 / 空态 / 歌曲列表卡）；SSE 推送提示改为列表卡顶部 badge；歌曲行首加 `Music` 图标；单列 `max-w-2xl` 居中消解右侧留白
+  - ClassifyWorkbench 图标化：类目卡 `Folder`、歌曲卡 `Music`、轮次徽章 `Repeat`、结果卡 `✓`/`✗` → `CircleCheck`/`CircleX`
+  - 移除已绑 QQ 时冗余的「加载我的喜欢」按钮（自动拉取 + 列表卡「刷新」按钮覆盖等价能力；「刷新」按钮保留）
+
+### 保留（边界）
+- 分享链接入口仍注释（自 v0.5.7），本次不恢复（`TODO(后期恢复)` 保留）
+- 已绑 QQ 自动拉取「我喜欢」行为不变，仅优化呈现节奏
+
 ## [0.5.7] - 2026-07-06
 
 ### Fixed
