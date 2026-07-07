@@ -4,6 +4,19 @@
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-07
+
+### Added
+- AI 代理配置 UI(超管可见):新建 `/settings` 页面,配置 worker 访问 OpenAI 的 HTTP 代理(host/port + 可选用户名/密码),含三档测试按钮(TCP / 经代理 HTTP 访问 OpenAI / 全链路 chat)。代理配置存 DB `proxy_config` 表(单行,密码 Fernet 加密复用 `secret_key`),`provider.chat` 每次读 DB 注入 `httpx.Client(proxy=...)` 到 OpenAI/Anthropic SDK,改完即生效(热生效,不重启 worker)。新增 `get_superadmin` 依赖;`UserResponse` 加 `is_superuser` 字段供前端显示齿轮入口
+
+### Fixed
+- `classify_task` 成功后未 publish `awaiting_feedback` 到 Redis pubsub(单批场景;多批 `merge_node` 已 publish)→ SSE 实时订阅收不到 `classify_ready`,前端不切提议态。改为成功后兜底 publish
+- `classify_task` 失败时未 `graph.update_state` → 重连/`GET state` 读不到 `failed`,看不到失败提示。改为失败时 `update_state(status=failed, error)` + publish failed;`ClassifyState` 加 `error` 字段
+
+### Changed
+- `docker-compose.yml` 的 `backend`/`worker` 加 `extra_hosts: host.docker.internal:host-gateway`,容器内可经 `host.docker.internal` 访问宿主机代理(页面提示不要填 127.0.0.1)
+- 版本 0.5.8 → 0.6.0
+
 ## [0.5.8] - 2026-07-07
 
 ### Changed
