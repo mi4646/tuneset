@@ -1,6 +1,7 @@
-import { Link, Outlet } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import BrandMark from "@/components/BrandMark";
 import ThemeToggle from "@/components/ThemeToggle";
 
 export default function AppLayout() {
@@ -8,12 +9,7 @@ export default function AppLayout() {
   return (
     <div className="min-h-svh flex flex-col">
       <header className="flex items-center justify-between px-8 py-4 border-b bg-background">
-        <Link
-          to="/songlist"
-          className="text-lg font-bold text-foreground hover:no-underline"
-        >
-          TuneSet
-        </Link>
+        <BrandMark asLink />
         {user && (
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">{user.email}</span>
