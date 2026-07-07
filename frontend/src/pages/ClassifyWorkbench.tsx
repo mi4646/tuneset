@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { Folder, Repeat, Music, CircleCheck, CircleX } from "lucide-react";
 import {
   DndContext,
   PointerSensor,
@@ -52,7 +53,8 @@ function SongCard({ item, name }: { item: ProposalItem; name?: string }) {
       {...attributes}
       {...listeners}
     >
-      <div className="text-sm font-medium truncate">
+      <div className="text-sm font-medium truncate flex items-center gap-1.5">
+        <Music className="size-3.5 text-muted-foreground shrink-0" />
         {name || `#${item.song_id}`}
       </div>
       {item.reason && (
@@ -81,7 +83,8 @@ function Category({
         isOver ? "border-primary bg-accent" : ""
       }`}
     >
-      <h3 className="font-semibold text-base">
+      <h3 className="font-semibold text-base flex items-center gap-1.5">
+        <Folder className="size-4 text-primary" />
         {category}（{items.length}）
       </h3>
       <div className="flex flex-col gap-2 min-h-12">
@@ -151,7 +154,7 @@ export default function ClassifyWorkbench() {
   const atMax = iteration >= config.classifyMaxIterations;
   const canConfirm = status === "finalized";
 
-  // 结果展示（不变）
+  // 结果展示
   if (results) {
     return (
       <div className="flex justify-center">
@@ -170,13 +173,16 @@ export default function ClassifyWorkbench() {
                   歌单 ID: {r.dirid}
                 </span>
                 <span
-                  className={
-                    r.added
-                      ? "text-primary font-medium"
-                      : "text-destructive font-medium"
-                  }
+                  className={`inline-flex items-center gap-1 font-medium ${
+                    r.added ? "text-primary" : "text-destructive"
+                  }`}
                 >
-                  {r.added ? "✓ 成功" : "✗ 失败"}
+                  {r.added ? (
+                    <CircleCheck className="size-4" />
+                  ) : (
+                    <CircleX className="size-4" />
+                  )}
+                  {r.added ? "成功" : "失败"}
                 </span>
               </div>
             ))}
@@ -282,7 +288,8 @@ export default function ClassifyWorkbench() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">分类工作台</h1>
-        <span className="inline-flex items-center rounded-full bg-accent text-accent-foreground px-3 py-1 text-sm font-medium">
+        <span className="inline-flex items-center gap-1 rounded-full bg-accent text-accent-foreground px-3 py-1 text-sm font-medium">
+          <Repeat className="size-3.5" />
           第 {iteration}/{config.classifyMaxIterations} 轮
         </span>
       </div>
