@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "sonner";
+import { Music, QrCode } from "lucide-react";
 import {
   useQqStatus,
   useSubscribeFavorite,
@@ -13,7 +14,6 @@ import { errMsg } from "@/lib/error";
 import { songlistApi } from "@/api";
 import { config } from "@/config";
 import type { SongItem } from "@/types";
-import Spinner from "@/components/Spinner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -46,7 +46,7 @@ export default function SonglistInput() {
   const [streaming, setStreaming] = useState(false);
   const nav = useNavigate();
 
-  const { data: qqStatus } = useQqStatus();
+  const { data: qqStatus, isLoading: qqLoading } = useQqStatus();
   const hasQq = qqStatus?.bound ?? false;
 
   const subscribeMu = useSubscribeFavorite();
@@ -156,62 +156,81 @@ export default function SonglistInput() {
       ? `每 ${Math.round(pushInterval / 60)} 分钟自动刷新`
       : `每 ${pushInterval} 秒自动刷新`;
 
-  return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">选择歌单</h1>
+  const showSkeleton = qqLoading || (hasQq && loading && songs.length === 0);
+  const showEmpty = hasQq && loaded && songs.length === 0 && !loading;
+  const showList = songs.length > 0;
 
-      {/* TODO(后期恢复): 粘贴分享链接入口，见 git history v0.5.7；恢复时改回 grid-cols-2 双列 */}
-      {/* <Card>
-        <CardHeader>
-          <CardTitle>粘贴分享链接</CardTitle>
-          <CardDescription>输入 QQ 音乐歌单分享链接</CardDescription>
-        </CardHeader>
-        <CardContent className="flex gap-2">
-          <Input
-            placeholder="粘贴 QQ 音乐歌单分享链接"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            className="flex-1"
-          />
-          <Button onClick={load} disabled={loading || !link}>
-            加载
-          </Button>
-        </CardContent>
-      </Card> */}
-      <div className="flex flex-col gap-4">
+  return (
+    <div className="flex flex-col gap-8 w-full max-w-2xl mx-auto">
+      {/* hero */}
+      <section className="flex flex-col gap-3 pt-4">
+        <h1 className="text-3xl font-bold tracking-tight">整理你的歌单</h1>
+        <p className="text-muted-foreground">
+          AI 帮你分类 QQ 音乐「我喜欢」，按 song_id 精确建歌单，版本一致不串味。
+        </p>
+      </section>
+
+      {/* 未绑 QQ：绑定引导卡（消解靶子4） */}
+      {!hasQq && !qqLoading && (
         <Card>
           <CardHeader>
-            <CardTitle>扫码取"我喜欢"</CardTitle>
-            <CardDescription>绑定 QQ 音乐后加载我喜欢</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <QrCode className="size-5 text-primary" />
+              绑定 QQ 音乐
+            </CardTitle>
+            <CardDescription>
+              绑定后可加载「我喜欢」歌单，并实时同步新增的歌曲
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            {hasQq ? (
-              <Button onClick={subscribeFav} disabled={loading}>
-                加载我的喜欢
-              </Button>
-            ) : (
-              <Button asChild variant="outline">
-                <Link to="/qr">去扫码登录</Link>
-              </Button>
-            )}
+            <Button asChild>
+              <Link to="/qr">
+                <QrCode className="size-4" />
+                去扫码绑定
+              </Link>
+            </Button>
           </CardContent>
         </Card>
-      </div>
-
-      {loading && songs.length === 0 && <Spinner label="加载中…" />}
-      {loaded && songs.length === 0 && !loading && (
-        <p className="text-muted-foreground text-center p-4">该歌单没有歌曲</p>
       )}
 
-      {songs.length > 0 && (
+      {/* 加载中：骨架列表卡（消解靶子3 呈现面） */}
+      {showSkeleton && (
         <Card className="p-0 overflow-hidden">
           <div className="flex items-center justify-between p-4 border-b">
             <span className="font-medium">
+              {qqLoading ? "正在确认 QQ 绑定状态…" : "正在加载你的「我喜欢」…"}
+            </span>
+          </div>
+          <div className="max-h-[420px] overflow-y-auto">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="grid grid-cols-[40px_1fr_auto] items-center gap-4 px-4 py-2 border-b last:border-b-0"
+              >
+                <div className="h-4 rounded bg-muted animate-pulse" />
+                <div className="h-4 rounded bg-muted animate-pulse" />
+                <div className="h-4 w-20 rounded bg-muted animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* 空歌单 */}
+      {showEmpty && (
+        <p className="text-muted-foreground text-center p-4">该歌单没有歌曲</p>
+      )}
+
+      {/* 已加载：歌曲列表卡（消解靶子2 空感 + 靶子7 图标） */}
+      {showList && (
+        <Card className="p-0 overflow-hidden">
+          <div className="flex items-center justify-between p-4 border-b">
+            <span className="font-medium flex items-center gap-2">
               已加载 {songs.length} 首
               {streaming && hasQq && (
-                <span className="text-muted-foreground text-sm">
-                  {" "}
-                  · {intervalText}
+                <span className="inline-flex items-center gap-1 rounded-full bg-accent text-accent-foreground px-2 py-0.5 text-xs font-normal">
+                  <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+                  实时同步中 · {intervalText}
                 </span>
               )}
             </span>
@@ -240,7 +259,10 @@ export default function SonglistInput() {
                 <span className="text-muted-foreground text-sm text-right">
                   {i + 1}
                 </span>
-                <span className="truncate font-medium">{s.name}</span>
+                <span className="truncate font-medium flex items-center gap-2">
+                  <Music className="size-4 text-muted-foreground shrink-0" />
+                  {s.name}
+                </span>
                 <span className="text-muted-foreground text-sm whitespace-nowrap">
                   {s.singer}
                 </span>
