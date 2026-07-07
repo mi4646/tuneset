@@ -101,8 +101,9 @@ export const qqApi = {
 };
 
 export const songlistApi = {
-  shared: (songlist_id: number) =>
-    api.post<SharedSonglistResponse>("/songlist/shared", { songlist_id }),
+  // TODO(后期恢复): 粘贴分享链接入口，见 git history v0.5.7
+  // shared: (songlist_id: number) =>
+  //   api.post<SharedSonglistResponse>("/songlist/shared", { songlist_id }),
   favorite: () => api.post<SharedSonglistResponse>("/songlist/favorite"),
   subscribeFavorite: () =>
     api.post<SubscribeResponse>("/songlist/favorite/subscribe"),

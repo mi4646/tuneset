@@ -4,7 +4,8 @@ import { toast } from "sonner";
 import {
   useQqStatus,
   useSubscribeFavorite,
-  useSonglistShared,
+  // TODO(后期恢复): 粘贴分享链接入口，见 git history v0.5.7
+  // useSonglistShared,
   useClassifyStart,
 } from "@/hooks/queries";
 import { useClassifyStore } from "@/stores/classify";
@@ -21,7 +22,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+// TODO(后期恢复): 粘贴分享链接入口，见 git history v0.5.7
+// import { Input } from "@/components/ui/input";
 
 const parseSongItems = (songs: Record<string, unknown>[]): SongItem[] =>
   songs.map((s) => ({
@@ -35,7 +37,8 @@ const parseSongItems = (songs: Record<string, unknown>[]): SongItem[] =>
   }));
 
 export default function SonglistInput() {
-  const [link, setLink] = useState("");
+  // TODO(后期恢复): 粘贴分享链接入口，见 git history v0.5.7
+  // const [link, setLink] = useState("");
   const [songs, setSongs] = useState<SongItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -47,16 +50,18 @@ export default function SonglistInput() {
   const hasQq = qqStatus?.bound ?? false;
 
   const subscribeMu = useSubscribeFavorite();
-  const sharedMu = useSonglistShared();
+  // TODO(后期恢复): 粘贴分享链接入口，见 git history v0.5.7
+  // const sharedMu = useSonglistShared();
   const startMu = useClassifyStart();
   const setSongNames = useClassifyStore((s) => s.setSongNames);
 
   const evtRef = useRef<EventSource | null>(null);
 
-  const parseSonglistId = (s: string): number | null => {
-    const m = s.match(/id=(\d+)/) || s.match(/(\d+)/);
-    return m ? Number(m[1]) : null;
-  };
+  // TODO(后期恢复): 粘贴分享链接入口，见 git history v0.5.7
+  // const parseSonglistId = (s: string): number | null => {
+  //   const m = s.match(/id=(\d+)/) || s.match(/(\d+)/);
+  //   return m ? Number(m[1]) : null;
+  // };
 
   // 订阅"我喜欢"实时推送：subscribe 拿 stream_id + 首批数据，EventSource 接收后续更新
   const subscribeFav = async () => {
@@ -113,20 +118,21 @@ export default function SonglistInput() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasQq]);
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const id = parseSonglistId(link);
-      if (!id) throw new Error("无法解析歌单 ID");
-      const r = await sharedMu.mutateAsync(id);
-      setSongs(parseSongItems(r.data?.songs || []));
-      setLoaded(true);
-    } catch (e: unknown) {
-      toast.error(errMsg(e, "加载失败"));
-    } finally {
-      setLoading(false);
-    }
-  };
+  // TODO(后期恢复): 粘贴分享链接入口，见 git history v0.5.7
+  // const load = async () => {
+  //   setLoading(true);
+  //   try {
+  //     const id = parseSonglistId(link);
+  //     if (!id) throw new Error("无法解析歌单 ID");
+  //     const r = await sharedMu.mutateAsync(id);
+  //     setSongs(parseSongItems(r.data?.songs || []));
+  //     setLoaded(true);
+  //   } catch (e: unknown) {
+  //     toast.error(errMsg(e, "加载失败"));
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   const start = async () => {
     if (songs.length > config.classifyMaxSongs) {
@@ -154,24 +160,25 @@ export default function SonglistInput() {
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-semibold">选择歌单</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>粘贴分享链接</CardTitle>
-            <CardDescription>输入 QQ 音乐歌单分享链接</CardDescription>
-          </CardHeader>
-          <CardContent className="flex gap-2">
-            <Input
-              placeholder="粘贴 QQ 音乐歌单分享链接"
-              value={link}
-              onChange={(e) => setLink(e.target.value)}
-              className="flex-1"
-            />
-            <Button onClick={load} disabled={loading || !link}>
-              加载
-            </Button>
-          </CardContent>
-        </Card>
+      {/* TODO(后期恢复): 粘贴分享链接入口，见 git history v0.5.7；恢复时改回 grid-cols-2 双列 */}
+      {/* <Card>
+        <CardHeader>
+          <CardTitle>粘贴分享链接</CardTitle>
+          <CardDescription>输入 QQ 音乐歌单分享链接</CardDescription>
+        </CardHeader>
+        <CardContent className="flex gap-2">
+          <Input
+            placeholder="粘贴 QQ 音乐歌单分享链接"
+            value={link}
+            onChange={(e) => setLink(e.target.value)}
+            className="flex-1"
+          />
+          <Button onClick={load} disabled={loading || !link}>
+            加载
+          </Button>
+        </CardContent>
+      </Card> */}
+      <div className="flex flex-col gap-4">
         <Card>
           <CardHeader>
             <CardTitle>扫码取"我喜欢"</CardTitle>

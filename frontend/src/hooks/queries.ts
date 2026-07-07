@@ -53,11 +53,12 @@ export function useQqStatus() {
 
 // ===== Songlist =====
 
-export function useSonglistShared() {
-  return useMutation({
-    mutationFn: (songlistId: number) => songlistApi.shared(songlistId),
-  });
-}
+// TODO(后期恢复): 粘贴分享链接入口，见 git history v0.5.7
+// export function useSonglistShared() {
+//   return useMutation({
+//     mutationFn: (songlistId: number) => songlistApi.shared(songlistId),
+//   });
+// }
 
 export function useSubscribeFavorite() {
   return useMutation({
