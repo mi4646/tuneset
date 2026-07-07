@@ -1,6 +1,13 @@
-"""AI 模型统一接口. 按 settings.ai_protocol 分流 openai/anthropic 双 SDK."""
+"""AI 模型统一接口. 按 settings.ai_protocol 分流 openai/anthropic 双 SDK.
+
+每次 chat() 从 DB 读 ProxyConfig，enabled 时构造 httpx.Client(proxy=...) 注入 SDK，
+保证代理配置热生效（改完不重启 worker）。
+"""
 
 from app.config import settings
+from app.logging import get_logger
+
+log = get_logger(__name__)
 
 
 class AIProvider:
@@ -11,16 +18,61 @@ class AIProvider:
 
     def __init__(self) -> None:
         self._protocol = settings.ai_protocol
-        self._client = None  # lazy: 首次 chat() 时构造,避免 import 阶段校验 api_key
+
+    def _read_proxy_url(self) -> str | None:
+        """从 DB 读 ProxyConfig(id=1)，enabled 且字段有效时返回代理 URL，否则 None（直连）."""
+        try:
+            from app.db.base import SessionLocal
+            from app.models import ProxyConfig
+            from app.security.crypto import decrypt
+
+            with SessionLocal() as db:
+                cfg = db.get(ProxyConfig, 1)
+                if cfg is None or not cfg.enabled:
+                    return None
+                if not cfg.host or cfg.port <= 0:
+                    return None
+                # 构造 http://[user:pass@]host:port
+                auth = ""
+                if cfg.username:
+                    pwd = ""
+                    if cfg.password_enc:
+                        try:
+                            pwd = decrypt(cfg.password_enc)
+                        except Exception:
+                            log.warning("proxy_password_decrypt_failed")
+                    auth = f"{cfg.username}:{pwd}@"
+                return f"http://{auth}{cfg.host}:{cfg.port}"
+        except Exception as e:
+            log.warning("proxy_config_read_failed", error=str(e))
+            return None
 
     def _build_client(self):
+        proxy_url = self._read_proxy_url()
+        http_client = None
+        if proxy_url:
+            import httpx
+
+            http_client = httpx.Client(proxy=proxy_url)
+
         if self._protocol == "openai":
             from openai import OpenAI
 
+            if http_client:
+                return OpenAI(
+                    api_key=settings.ai_api_key,
+                    base_url=settings.ai_base_url,
+                    http_client=http_client,
+                )
             return OpenAI(api_key=settings.ai_api_key, base_url=settings.ai_base_url)
         if self._protocol == "anthropic":
             from anthropic import Anthropic
 
+            if http_client:
+                return Anthropic(
+                    api_key=settings.ai_api_key,
+                    http_client=http_client,
+                )
             return Anthropic(api_key=settings.ai_api_key)
         raise ValueError(f"unsupported ai_protocol: {self._protocol}")
 
@@ -33,10 +85,10 @@ class AIProvider:
         temperature: float = 0.3,
     ) -> tuple[str, dict[str, int]]:
         """返回 (response_text, usage). usage = {input_tokens, output_tokens}."""
-        if self._client is None:
-            self._client = self._build_client()
+        # 每次构造 client（不缓存），保证代理配置热生效
+        client = self._build_client()
         if self._protocol == "openai":
-            resp = self._client.chat.completions.create(
+            resp = client.chat.completions.create(
                 model=settings.ai_model,
                 messages=[
                     {"role": "system", "content": system},
@@ -52,7 +104,7 @@ class AIProvider:
             }
             return text, usage
         # anthropic
-        resp = self._client.messages.create(
+        resp = client.messages.create(
             model=settings.ai_model,
             system=system,
             messages=[{"role": "user", "content": user}],

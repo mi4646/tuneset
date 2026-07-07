@@ -26,6 +26,42 @@ export interface SongItem {
 
 export interface User {
   email: string;
+  is_superuser: boolean;
+}
+
+export interface ProxyConfig {
+  enabled: boolean;
+  host: string;
+  port: number;
+  username: string | null;
+  password_is_set: boolean;
+}
+
+export interface ProxyConfigUpdate {
+  enabled: boolean;
+  host: string;
+  port: number;
+  username?: string | null;
+  password?: string | null;
+}
+
+export interface ProxyTestRequest {
+  enabled: boolean;
+  host: string;
+  port: number;
+  username?: string | null;
+  password?: string | null;
+}
+
+export interface ProxyTestStepResult {
+  ok: boolean;
+  detail: string;
+}
+
+export interface ProxyTestResult {
+  l1_tcp: ProxyTestStepResult;
+  l2_http: ProxyTestStepResult;
+  l3_chat: ProxyTestStepResult;
 }
 
 export interface TokenPair {

@@ -31,3 +31,10 @@ def get_current_user(
     if user is None or not user.is_active:
         raise credentials_exc
     return user
+
+
+def get_superadmin(current: User = Depends(get_current_user)) -> User:
+    """仅超管可访问，否则 403."""
+    if not current.is_superuser:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Superadmin only")
+    return current

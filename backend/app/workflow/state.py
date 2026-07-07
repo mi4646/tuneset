@@ -63,4 +63,5 @@ class ClassifyState(TypedDict, total=False):
     checkpoint_ids: list[str]
     # 状态
     status: str
+    error: str
     plan: dict

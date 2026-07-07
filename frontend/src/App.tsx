@@ -4,10 +4,12 @@ import Register from "./pages/Register";
 import QrLogin from "./pages/QrLogin";
 import SonglistInput from "./pages/SonglistInput";
 import ClassifyWorkbench from "./pages/ClassifyWorkbench";
+import Settings from "./pages/Settings";
 import { AuthProvider } from "./components/AuthProvider";
 import ErrorBoundary from "./components/ErrorBoundary";
 import AppLayout from "./components/AppLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
 
 export default function App() {
   return (
@@ -22,6 +24,14 @@ export default function App() {
               <Route element={<AppLayout />}>
                 <Route path="/songlist" element={<SonglistInput />} />
                 <Route path="/classify/:threadId" element={<ClassifyWorkbench />} />
+                <Route
+                  path="/settings"
+                  element={
+                    <AdminRoute>
+                      <Settings />
+                    </AdminRoute>
+                  }
+                />
               </Route>
             </Route>
             <Route path="*" element={<Navigate to="/songlist" replace />} />

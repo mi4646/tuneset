@@ -24,9 +24,14 @@ def classify_task(songs: list, user_id: int, thread_id: str) -> dict:
             config=config,
         )
     except Exception as e:
+        # 失败时更新 state（重连/GET state 可读到 failed）+ publish failed
+        try:
+            graph.update_state(config, {"status": "failed", "error": str(e)})
+        except Exception:
+            pass  # update 失败不掩盖原异常
         redis_client.publish(
             f"classify:progress:{thread_id}",
-            json.dumps({"status": "failed", "error": str(e)}),
+            json.dumps({"status": "failed", "error": str(e)}, ensure_ascii=False),
         )
         raise
     # 跑到 await_feedback interrupt 返回，result 是当前 state
@@ -42,10 +47,20 @@ def classify_task(songs: list, user_id: int, thread_id: str) -> dict:
             total_cost=total_cost,
             status="awaiting_feedback",
         )
+    # 兜底 publish awaiting_feedback（覆盖单批场景 + 竞态；merge_node 的 publish 保留）
+    proposal = result.get("proposal")
+    iteration = result.get("iteration", 0)
+    redis_client.publish(
+        f"classify:progress:{thread_id}",
+        json.dumps(
+            {"status": "awaiting_feedback", "proposal": proposal, "iteration": iteration},
+            ensure_ascii=False,
+        ),
+    )
     return {
         "status": result.get("status"),
-        "proposal": result.get("proposal"),
-        "iteration": result.get("iteration", 0),
+        "proposal": proposal,
+        "iteration": iteration,
         "llm_calls": llm_calls,
     }
 

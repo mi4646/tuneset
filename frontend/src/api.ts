@@ -4,6 +4,10 @@ import type {
   CheckQrResponse,
   ConfirmResponse,
   DragFeedback,
+  ProxyConfig,
+  ProxyConfigUpdate,
+  ProxyTestRequest,
+  ProxyTestResult,
   QqStatusResponse,
   QrCodeResponse,
   SharedSonglistResponse,
@@ -127,4 +131,12 @@ export const classifyApi = {
       `/classify/${thread_id}/cancel`
     ),
   streamUrl: (thread_id: string) => `${config.apiBaseUrl}/classify/${thread_id}/stream`,
+};
+
+export const settingsApi = {
+  getProxy: () => api.get<ProxyConfig>("/settings/proxy"),
+  saveProxy: (data: ProxyConfigUpdate) =>
+    api.put<ProxyConfig>("/settings/proxy", data),
+  testProxy: (data: ProxyTestRequest) =>
+    api.post<ProxyTestResult>("/settings/proxy/test", data),
 };

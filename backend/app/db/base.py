@@ -53,7 +53,7 @@ def _migrate_users_qq_fields() -> None:
 def init_db() -> None:
     """建表。开发期用 create_all；生产迁移后续引入 alembic。"""
     Path(settings.sqlite_path).parent.mkdir(parents=True, exist_ok=True)
-    from app.models import AuditLog, InviteCode, User  # noqa: F401
+    from app.models import AuditLog, InviteCode, ProxyConfig, User  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     _migrate_users_is_superuser()

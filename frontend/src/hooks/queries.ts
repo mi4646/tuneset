@@ -1,12 +1,16 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { authApi, classifyApi, isLoggedIn, qqApi, songlistApi } from "@/api";
+import { authApi, classifyApi, isLoggedIn, qqApi, settingsApi, songlistApi } from "@/api";
 import { useClassifyStore } from "@/stores/classify";
+import { toast } from "sonner";
 import type {
   ClassifyFailedEvent,
   ClassifyProgressEvent,
   ClassifyReadyEvent,
   DragFeedback,
+  ProxyConfigUpdate,
+  ProxyTestRequest,
+  ProxyTestResult,
   SongItem,
 } from "@/types";
 
@@ -156,4 +160,33 @@ export function useClassifyStream(threadId: string) {
     };
     return () => es.close();
   }, [threadId, setFromState, setProgress, setStreamError]);
+}
+
+// ===== Settings =====
+
+export function useProxyConfig() {
+  return useQuery({
+    queryKey: ["settings", "proxy"],
+    queryFn: () => settingsApi.getProxy().then((r) => r.data),
+    retry: false,
+  });
+}
+
+export function useSaveProxy() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: ProxyConfigUpdate) =>
+      settingsApi.saveProxy(data).then((r) => r.data),
+    onSuccess: () => {
+      toast.success("代理配置已保存");
+      qc.invalidateQueries({ queryKey: ["settings", "proxy"] });
+    },
+  });
+}
+
+export function useTestProxy() {
+  return useMutation({
+    mutationFn: (data: ProxyTestRequest) =>
+      settingsApi.testProxy(data).then((r) => r.data as ProxyTestResult),
+  });
 }
