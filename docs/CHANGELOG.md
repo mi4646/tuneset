@@ -4,6 +4,14 @@
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-07-07
+
+### Fixed
+- Dialog 切屏遮罩残留:`ClassifyWorkbench` 分类失败对话框关闭时,Radix `Presence` 依赖 `animationend` 卸载 overlay DOM;切屏期间 CSS keyframe 动画被浏览器节流、`animationend` 不触发 → overlay 残留在 `document.body`,灰色遮罩持续显示需刷新才消失。改用 `transition` + `opacity`/`scale`,终态由 `data-[state]` utility 写死,不依赖事件收敛。代价:丢失 slide 滑入效果,保留 fade + zoom
+
+### Changed
+- 版本 0.6.0 → 0.6.1
+
 ## [0.6.0] - 2026-07-07
 
 ### Added
