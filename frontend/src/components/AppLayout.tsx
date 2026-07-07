@@ -1,6 +1,7 @@
 import { Link, Outlet } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function AppLayout() {
   const { user, logout } = useAuth();
@@ -16,6 +17,7 @@ export default function AppLayout() {
         {user && (
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted-foreground">{user.email}</span>
+            <ThemeToggle />
             <Button variant="ghost" size="sm" onClick={logout}>
               登出
             </Button>
