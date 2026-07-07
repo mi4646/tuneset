@@ -48,15 +48,23 @@
   - `backend/pyproject.toml` 的 `version`
   - `frontend/package.json` 的 `version`
   - `docker-compose.yml` 各服务 `image:` 标签
-- **判定标准**（SemVer + Conventional Commits）：
-  - `feat` → minor；`fix`/`refactor`/`perf`/`docs` → patch
-  - `BREAKING CHANGE` / `feat!` → major；`chore`/`ci`/`test` → 不升
-- **触发时机**：commit 后由 Claude 判定是否升版本；不升则不动；升则：
-  1. 更新 `VERSION` + 同步 `pyproject.toml` + `package.json` + `docker-compose.yml` 标签
-  2. 在 `docs/CHANGELOG.md` 追加条目（Keep a Changelog 格式）
+- **累积制**：`feat`/`fix`/`refactor`/`perf`/`docs` 的 commit **平时不升版本、不打 tag、不动 CHANGELOG.md**；`chore`/`ci`/`test` 不计入累积
+- **发版触发**（满足任一）：
+  - 显式：陛下指令“发版”/“release” → 立即发
+  - 阈值：自上次 tag 以来累积 commit 达到下表阈值 → 臣提醒“建议发版”，陛下确认才发（不擅自发）
+    - 含 `BREAKING CHANGE` / `feat!` → 立即发 major（不积攒）
+    - 含 `feat`（无 BREAKING）→ 累积 ≥ 2 条 提醒
+    - 全是 `fix`/`refactor`/`perf`/`docs` → 累积 ≥ 5 条 提醒
+- **版本号判定**（发版时按累积内容一次性看全量）：
+  - 含 `BREAKING CHANGE` → major
+  - 含 `feat` → minor
+  - 全是 `fix`/`refactor`/`perf`/`docs` → patch
+- **发版动作**：
+  1. 判定版本号，更新 `VERSION` + 同步 `pyproject.toml` + `package.json` + `docker-compose.yml` 标签
+  2. 在 `CHANGELOG.md`（根目录）顶部标题下追加 `### vX.Y.Z` + 有序列表（每条一行，面向用户的大白话摘要，从 git log 提炼）
   3. 独立 commit `chore(release): vX.Y.Z`
   4. 打 git tag `vX.Y.Z`
-- **记录文档**：`docs/CHANGELOG.md`
+- **记录文档**：`CHANGELOG.md`（根目录，用户向精简格式：`### vX.Y.Z` + 有序列表）
 
 ## 配置管理
 
@@ -128,5 +136,5 @@ log.info("event_name", field=value, euin_masked=mask(euin))
 
 - 完整方案决策：`docs/plan.md`
 - QQMusicApi 接口确认：`docs/qqmusic-api-interfaces.md`
-- 变更记录：`docs/CHANGELOG.md`
+- 变更记录：`CHANGELOG.md`（根目录）
 - `docs/superpowers/`：本地设计 spec，**本项目入库**（例外于全局 CLAUDE.md 第 5 条；其他项目默认仍过滤）。**计划/设计文档放 `docs/superpowers/plans/`**
