@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 FROM python:3.12-slim
 WORKDIR /app
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+RUN pip install --no-cache-dir uv -i https://mirrors.aliyun.com/pypi/simple/
 COPY pyproject.toml uv.lock ./
 ENV UV_HTTP_TIMEOUT=300
 ENV UV_INDEX_URL=https://mirrors.aliyun.com/pypi/simple/
