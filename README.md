@@ -128,6 +128,7 @@ tuneset/
 | [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | 运维手册:部署流程、健康检查、常见问题、回滚 |
 | [`docs/plan.md`](docs/plan.md) | 完整方案决策 |
 | [`docs/qqmusic-api-interfaces.md`](docs/qqmusic-api-interfaces.md) | QQMusicApi 命门接口确认 |
+| [`CHANGELOG.md`](CHANGELOG.md) | 变更记录(每版本更新摘要) |
 | [`CLAUDE.md`](CLAUDE.md) | 项目约束 + 日志规范(给 AI 助手) |
 
 ## 配置
