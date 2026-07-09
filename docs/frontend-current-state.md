@@ -1,7 +1,9 @@
-# 前端现状总结
+# 前端现状总结（重构前基线 · 历史归档）
 
+> **历史文档**：这是 2026-07-07 记录的"前端 6 阶段重构前"现状基线，与 `docs/superpowers/plans/frontend-ui-refactor.md`（重构方案）形成前后对照。
+> **重构已于 v0.5.8~v0.6.1 落地**（commit 499f78b/bfbebe1/75407d8/3c85522/b26bc01/2ecc8e2）：BrandMark/AuthShell 品牌化、SonglistInput hero+状态化、ClassifyWorkbench 图标化、next-themes 启用（ThemeToggle 已在 AppLayout）、Dialog 遮罩修复。下方"重构靶子"6 条**多数已解决**，保留本文仅作重构动机的历史参考——**当前前端状态以代码为准**，勿当作现状。
+>
 > 范围：`frontend/` 全部页面 + 样式系统 + 状态/hooks 分层。
-> 用途：作为下一轮"样式/交互重构"讨论的现状基线，与 `frontend-refactor.md`（旧版重构计划）形成前后对照。
 > 日期：2026-07-07
 > 视角：UI 设计师 + 前端工程师
 

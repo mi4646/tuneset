@@ -17,7 +17,7 @@
 | 获取"我喜欢" | `UserApi.get_fav_song(euin, page, num)` | dirid=201 是"我喜欢"固定 ID，需 euin（加密 UIN） |
 | 获取歌词 | `LyricApi.get_lyric` | |
 | 获取歌曲详情 | `SongApi.get_detail(value)` | |
-| 获取歌曲标签 | `SongApi.get_labels(songid)` | 分类依据来源 |
+| 获取歌曲标签 | `SongApi.get_labels(songid)` | 分类依据来源。返回 `GetSongLabelsResponse`，含 `labels: list[SongLabel]`。`SongLabel` 字段：`id:int` / `tag_txt:str`（标签文本）/ `tag_icon:str` / `tag_url:str` / `tag_type:int`（标签类型）/ `species:int`（所属分类）。**`tag_type` 和 `species` 都是 int，无"风格/语种/情绪/场景"字符串维度**——六轴映射/风格簇判定需建 `tag_type` int→维度名映射表（见 `docs/superpowers/plans/listening-profile-design.md` T1/label_dims.py） |
 | 获取歌单详情 | `SonglistApi.get_detail` | 分享链接入口用 |
 | 其他版本 | `SongApi.get_other_version(value)` | 识别用户喜欢的具体版本 |
 
