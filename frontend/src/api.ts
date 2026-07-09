@@ -4,6 +4,7 @@ import type {
   CheckQrResponse,
   ConfirmResponse,
   DragFeedback,
+  ProfileData,
   ProxyConfig,
   ProxyConfigUpdate,
   ProxyTestRequest,
@@ -11,6 +12,8 @@ import type {
   QqStatusResponse,
   QrCodeResponse,
   SharedSonglistResponse,
+  SharedProfileResponse,
+  ShareToken,
   SongItem,
   StartResponse,
   StateResponse,
@@ -139,4 +142,21 @@ export const settingsApi = {
     api.put<ProxyConfig>("/settings/proxy", data),
   testProxy: (data: ProxyTestRequest) =>
     api.post<ProxyTestResult>("/settings/proxy/test", data),
+};
+
+export const profileApi = {
+  generate: () =>
+    api.post<{ thread_id: string }>("/profile/generate"),
+  streamUrl: (threadId: string) =>
+    `${config.apiBaseUrl}/profile/${threadId}/stream`,
+  result: (threadId: string) =>
+    api.get<ProfileData>(`/profile/${threadId}/result`),
+  createShareToken: () =>
+    api.post<ShareToken>("/profile/share-tokens"),
+  listShareTokens: () =>
+    api.get<{ tokens: ShareToken[] }>("/profile/share-tokens"),
+  revokeShareToken: (token: string) =>
+    api.delete(`/profile/share-tokens/${token}`),
+  sharedProfile: (token: string) =>
+    api.get<SharedProfileResponse>(`/profile/shared/${token}`),
 };

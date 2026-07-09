@@ -5,7 +5,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api import auth, classify, health, qq, songlist, stream
+from app.api import auth, classify, health, profile, qq, songlist, stream
 from app.api import settings as settings_api
 from app.config import settings
 from app.db.base import ensure_superadmin, init_db
@@ -54,6 +54,7 @@ app.include_router(auth.router, prefix="/api/auth")
 app.include_router(qq.router, prefix="/api/qq")
 app.include_router(songlist.router, prefix="/api/songlist")
 app.include_router(classify.router, prefix="/api/classify")
+app.include_router(profile.router, prefix="/api/profile")
 app.include_router(stream.router, prefix="/api")
 app.include_router(settings_api.router, prefix="/api/settings")
 

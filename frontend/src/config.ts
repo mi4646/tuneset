@@ -5,4 +5,5 @@ export const config = {
   qrPollInterval: Number(import.meta.env.VITE_QR_POLL_INTERVAL ?? 2000),
   classifyMaxIterations: Number(import.meta.env.VITE_CLASSIFY_MAX_ITERATIONS ?? 5),
   classifyMaxSongs: Number(import.meta.env.VITE_CLASSIFY_MAX_SONGS ?? 2000),
+  profileTagCloudMax: Number(import.meta.env.VITE_PROFILE_TAG_CLOUD_MAX ?? 50),
 } as const;

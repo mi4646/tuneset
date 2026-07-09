@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 FROM python:3.12-slim
 WORKDIR /app
 RUN pip install --no-cache-dir uv -i https://mirrors.aliyun.com/pypi/simple/

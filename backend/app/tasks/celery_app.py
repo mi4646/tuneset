@@ -18,7 +18,7 @@ celery = Celery(
     "tuneset",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=["app.tasks.classify_task", "app.tasks.fav_cache"],
+    include=["app.tasks.classify_task", "app.tasks.fav_cache", "app.tasks.profile_task"],
 )
 
 celery.conf.update(

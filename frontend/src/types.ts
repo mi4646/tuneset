@@ -137,3 +137,61 @@ export interface ClassifyFailedEvent {
   status: string;
   error: string;
 }
+
+// === Listening Profile ===
+
+export interface ProfileTag {
+  tag: string;
+  weight: number;
+}
+
+export interface ProfileClusterSong {
+  song_id: number;
+  name: string;
+  singer: string;
+}
+
+export interface ProfileCluster {
+  name: string;
+  insight: string;
+  song_count: number;
+  songs: ProfileClusterSong[];
+}
+
+export interface ProfileData {
+  radar: AxisData[];
+  personality: string;
+  clusters: ProfileCluster[];
+  artists: ArtistData[];
+  tags: ProfileTag[];
+  generated_at: string;
+}
+
+export interface AxisData {
+  axis: string;
+  value: number;
+}
+
+export interface ArtistData {
+  artist: string;
+  count: number;
+}
+
+export interface ProfileProgressEvent {
+  stage: string;
+  detail: string;
+}
+
+export interface ShareToken {
+  token: string;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface SharedProfileResponse {
+  profile: ProfileData;
+  shared_by: string;
+  created_at: string;
+  expires_at: string;
+  generated_at: string;
+}
